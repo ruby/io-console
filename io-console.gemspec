@@ -18,4 +18,6 @@ Gem::Specification.new do |s|
   s.license = "BSD-2-Clause"
   s.cert_chain  = %w[certs/nobu.pem]
   s.signing_key = File.expand_path("~/.ssh/gem-private_key.pem") if $0 =~ /gem\z/
+
+  s.add_development_dependency 'rake-compiler'
 end

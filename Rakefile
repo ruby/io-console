@@ -7,4 +7,7 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList["test/**/*_test.rb"]
 end
 
+require 'rake/extensiontask'
+Rake::ExtensionTask.new("io/console")
+
 task :default => :test
