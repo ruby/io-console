@@ -1,8 +1,6 @@
-# IO::Console
+# IO.console
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/io/console`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Add console capabilities to IO instances.
 
 ## Installation
 
@@ -22,7 +20,16 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```
+require 'io/console'
+
+IO.console      -> #<File:/dev/tty>
+IO.console(sym, *args)
+```
+
+Returns an File instance opened console.
+
+If `sym` is given, it will be sent to the opened console with `args` and the result will be returned instead of the console IO itself.
 
 ## Development
 
