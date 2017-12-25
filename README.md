@@ -20,7 +20,7 @@ Or install it yourself as:
 
 ## Usage
 
-```
+```ruby
 require 'io/console'
 
 IO.console      -> #<File:/dev/tty>
