@@ -4,3 +4,4 @@ rvm:
   - ruby-head
 before_install:
   - gem install bundler
+  - rm -fr $HOME/.rvm/rubies/ruby-head/lib/ruby/site_ruby/*/rubygems
