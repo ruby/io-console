@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.homepage = "https://github.com/ruby/io-console"
   s.authors = ["Nobu Nakada"]
   s.require_path = %[lib]
-  s.files = %w[ext/io/console/console.c ext/io/console/extconf.rb lib/console/size.rb ext/io/console/win32_vk.inc]
+  s.files = %w[ext/io/console/console.c ext/io/console/extconf.rb lib/io/console/size.rb ext/io/console/win32_vk.inc]
   s.extensions = %w[ext/io/console/extconf.rb]
   s.license = "BSD-2-Clause"
   s.cert_chain  = %w[certs/nobu.pem]
