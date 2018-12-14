@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.description = "add console capabilities to IO instances."
   s.required_ruby_version = ">= 2.2.0"
   s.homepage = "https://github.com/ruby/io-console"
+  s.metadata["source_code_url"] = s.homepage
   s.authors = ["Nobu Nakada"]
   s.require_path = %[lib]
   s.files = %w[
