@@ -15,7 +15,7 @@ Rake::ExtensionTask.new("io/console", spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = %w[x86-mingw32 x64-mingw32]
   ext.cross_compiling do |s|
-    s.files.concat p(VERSIONS.map {|v| "lib/#{v[/\A\d+\.\d+/]}/io/console.so"})
+    s.files.concat VERSIONS.map {|v| "lib/#{v[/\A\d+\.\d+/]}/io/console.so"}
   end
 end
 
