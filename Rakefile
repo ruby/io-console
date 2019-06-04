@@ -11,6 +11,8 @@ end
 
 require 'rake/extensiontask'
 spec = eval(File.read('io-console.gemspec'))
+spec.files.delete_if {|n| %r'\Aext/' =~ n}
+spec.extensions.clear
 Rake::ExtensionTask.new("io/console", spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = %w[x86-mingw32 x64-mingw32]
