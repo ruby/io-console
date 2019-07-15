@@ -1,5 +1,5 @@
 # -*- ruby -*-
-_VERSION = IO.popen(%W[git -C #{__dir__} describe --tags], &:read)[/\Av?\d+(?:\.\d+)*/]
+_VERSION = IO.popen(%W[git -C #{__dir__} describe --tags], &:read)[/\Av?(\d+(?:\.\d+)*)/, 1]
 date = %w$Date::                           $[1]
 
 Gem::Specification.new do |s|
