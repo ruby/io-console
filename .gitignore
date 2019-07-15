@@ -2,6 +2,8 @@
 /pkg/
 /tmp/
 
+Gemfile.lock
+
 *.bundle
 *.dll
 *.so
