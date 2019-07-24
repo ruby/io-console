@@ -25,7 +25,4 @@ Gem::Specification.new do |s|
   ]
   s.extensions = %w[ext/io/console/extconf.rb]
   s.license = "BSD-2-Clause"
-
-  s.add_development_dependency 'rake-compiler'
-  s.add_development_dependency 'rake-compiler-dock', ">= 0.6.1"
 end
