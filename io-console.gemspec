@@ -21,7 +21,6 @@ Gem::Specification.new do |s|
     ext/io/console/extconf.rb
     ext/io/console/win32_vk.inc
     lib/io/console/size.rb
-    stub/io/console.rb
   ]
   s.extensions = %w[ext/io/console/extconf.rb]
   s.license = "BSD-2-Clause"
