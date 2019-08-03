@@ -133,7 +133,6 @@ module Test
     @@stop_auto_run = true
   end
 eom
-
         args = args.dup
         args.insert((Hash === args.first ? 1 : 0), "-w", "--disable=gems", *$:.map {|l| "-I#{l}"})
         stdout, stderr, status = EnvUtil.invoke_ruby(args, src, true, true, **opt)
@@ -164,6 +163,14 @@ eom
         end
         assert(status.success?, FailDesc[status, "assert_separately failed", stderr])
         raise marshal_error if marshal_error
+      end
+
+      def assert_ruby_status(args, test_stdin="", message=nil, **opt)
+        out, _, status = EnvUtil.invoke_ruby(args, test_stdin, true, :merge_to_stdout, **opt)
+        desc = FailDesc[status, message, out]
+        assert(!status.signaled?, desc)
+        message ||= "ruby exit status is not success:"
+        assert(status.success?, desc)
       end
 
       class << (AssertFile = Struct.new(:failure_message).new)
