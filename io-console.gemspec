@@ -33,6 +33,13 @@ Gem::Specification.new do |s|
     s.require_paths.unshift("jruby")
     s.files.concat(%w[
       jruby/io/console.rb
+      lib/io/console/jruby.rb
+      lib/io/console/jruby/bsd_console.rb
+      lib/io/console/jruby/common.rb
+      lib/io/console/jruby/linux_console.rb
+      lib/io/console/jruby/native_console.rb
+      lib/io/console/jruby/stty_console.rb
+      lib/io/console/jruby/stub_console.rb
     ])
   end
 
