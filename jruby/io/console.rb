@@ -1,0 +1,1 @@
+require 'io/console/jruby'
