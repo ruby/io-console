@@ -1,5 +1,5 @@
 # -*- ruby -*-
-_VERSION = IO.popen(%W[git -C #{__dir__} describe --tags --match v[0-9]*], &:read)[/\Av?(\d+(?:\.\d+)*)/, 1]
+_VERSION = "0.5.6"
 
 Gem::Specification.new do |s|
   s.name = "io-console"
