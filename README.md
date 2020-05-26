@@ -27,7 +27,7 @@ IO.console      -> #<File:/dev/tty>
 IO.console(sym, *args)
 ```
 
-Returns an File instance opened console.
+Returns a File instance opened console.
 
 If `sym` is given, it will be sent to the opened console with `args` and the result will be returned instead of the console IO itself.
 
