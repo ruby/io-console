@@ -7,11 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby: [ '2.7.x', '2.6.x', '2.5.x' ]
+        ruby: [ 'head', '2.7', '2.6', '2.5' ]
     steps:
     - uses: actions/checkout@master
     - name: Set up Ruby
-      uses: actions/setup-ruby@v1
+      uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
     - name: Set up Bundler
