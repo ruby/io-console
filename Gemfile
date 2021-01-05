@@ -8,5 +8,4 @@ group :development do
   gem "rake"
   gem "test-unit"
   gem 'rake-compiler'
-  gem 'rake-compiler-dock', ">= 0.6.1", platforms: :mingw
 end
