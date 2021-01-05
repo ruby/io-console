@@ -21,8 +21,26 @@ task "date_epoch" do
 end
 
 helper = Bundler::GemHelper.instance
+def helper.update_gemspec
+  path = "#{__dir__}/#{gemspec.name}.gemspec"
+  File.open(path, "r+b") do |f|
+    if (d = f.read).sub!(/^(_VERSION\s*=\s*)".*"/) {$1 + gemspec.version.to_s.dump}
+      f.rewind
+      f.truncate(0)
+      f.print(d)
+    end
+  end
+end
+
+def helper.commit_bump
+  sh(%W[git -C #{__dir__} commit -m bump\ up\ to\ #{gemspec.version}
+        #{gemspec.name}.gemspec])
+end
+
 def helper.version=(v)
   gemspec.version = v
+  update_gemspec
+  commit_bump
   tag_version
 end
 major, minor, teeny = helper.gemspec.version.segments
