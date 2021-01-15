@@ -163,7 +163,7 @@ module IO::LibC
   TCSANOW	 = 0
   TCSADRAIN = 1
   TCSAFLUSH = 2
-  NCCS = 19
+  NCCS = 32
   class Termios < FFI::Struct
     layout \
       :c_iflag, :tcflag_t,
