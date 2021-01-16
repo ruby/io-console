@@ -19,18 +19,13 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
-    - name: Set up Bundler
-      run: gem install bundler --no-document
-    - name: Install dependencies
-      run: bundle install
-    - name: Run test
-      run: rake
-    - name: Package
-      id: package
-      run: rake build
+    - uses: ./.github/actions/test
+    - uses: ./.github/actions/build
+      id: build
       if: "matrix.ruby == '3.0'"
     - name: Upload package
       uses: actions/upload-artifact@v2
       with:
-        path: pkg
-      if: "matrix.ruby == '3.0'"
+        path: pkg/*.gem
+        name: ${{steps.build.outputs.pkg}}
+      if: steps.build.outputs.pkg

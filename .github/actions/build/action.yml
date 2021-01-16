@@ -1,0 +1,16 @@
+name: 'gem-build'
+description: 'Build gem'
+outputs:
+  pkg:
+    description: 'Package name'
+    value: ${{ steps.pkg.outputs.dir }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Package
+      run: rake build
+      shell: bash
+    - id: pkg
+      run: echo "::set-output name=dir::${GITHUB_REPOSITORY#*/}-${GITHUB_WORKFLOW}"
+      shell: bash

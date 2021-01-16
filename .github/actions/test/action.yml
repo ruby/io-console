@@ -1,0 +1,19 @@
+name: 'gem-test'
+description: 'Test gem'
+inputs:
+  ruby-version:
+    description: 'Testing Ruby version'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Bundler
+      run: gem install bundler --no-document
+      shell: sh
+    - name: Install dependencies
+      run: bundle install
+      shell: sh
+    - name: Run test
+      run: rake
+      shell: sh
