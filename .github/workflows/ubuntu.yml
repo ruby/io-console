@@ -1,0 +1,34 @@
+name: ubuntu
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby: [ 'head', '3.0', '2.7', '2.6' ]
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+    - name: Set up Bundler
+      run: gem install bundler --no-document
+    - name: Install dependencies
+      run: bundle install
+    - name: Run test
+      run: rake
+    - name: Package
+      id: package
+      run: |
+        SOURCE_DATE_EPOCH=`git log -1 --format=%ct` rake build
+        set pkg/*.gem && echo "::set-output name=gem::${1#*/}"
+      if: "matrix.ruby == '3.0'"
+    - name: Upload package
+      uses: actions/upload-artifact@v2
+      with:
+        path: pkg/*
+        name: ${{ steps.package.outputs.gem }}
+      if: "steps.package.outputs.gem != ''"

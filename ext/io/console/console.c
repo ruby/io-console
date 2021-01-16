@@ -1,4 +1,4 @@
-/* -*- c-file-style: "ruby" -*- */
+/* -*- c-file-style: "ruby"; indent-tabs-mode: t -*- */
 /*
  * console IO module
  */
@@ -77,8 +77,14 @@ getattr(int fd, conmode *t)
 
 static ID id_getc, id_console, id_close, id_min, id_time, id_intr;
 #if ENABLE_IO_GETPASS
-static ID id_gets;
+static ID id_gets, id_chomp_bang;
 #endif
+
+#ifdef HAVE_RB_SCHEDULER_TIMEOUT
+extern VALUE rb_scheduler_timeout(struct timeval *timeout);
+#endif
+
+#define sys_fail_fptr(fptr) rb_sys_fail_str((fptr)->pathv)
 
 #ifndef HAVE_RB_F_SEND
 static ID id___send__;
@@ -111,6 +117,9 @@ rawmode_opt(int *argcp, VALUE *argv, int min_argc, int max_argc, rawmode_arg_t *
     int argc = *argcp;
     rawmode_arg_t *optp = NULL;
     VALUE vopts = Qnil;
+#ifdef RB_SCAN_ARGS_PASS_CALLED_KEYWORDS
+    argc = rb_scan_args(argc, argv, "*:", NULL, &vopts);
+#else
     if (argc > min_argc)  {
 	vopts = rb_check_hash_type(argv[argc-1]);
 	if (!NIL_P(vopts)) {
@@ -120,6 +129,7 @@ rawmode_opt(int *argcp, VALUE *argv, int min_argc, int max_argc, rawmode_arg_t *
 	    if (!vopts) vopts = Qnil;
 	}
     }
+#endif
     rb_check_arity(argc, min_argc, max_argc);
     if (!NIL_P(vopts)) {
 	VALUE vmin = rb_hash_aref(vopts, ID2SYM(id_min));
@@ -356,9 +366,9 @@ ttymode_with_io(VALUE io, VALUE (*func)(VALUE, VALUE), VALUE farg, void (*setter
 
 /*
  * call-seq:
- *   io.raw(min: nil, time: nil) {|io| }
+ *   io.raw(min: nil, time: nil, intr: nil) {|io| }
  *
- * Yields +self+ within raw mode.
+ * Yields +self+ within raw mode, and returns the result of the block.
  *
  *   STDIN.raw(&:gets)
  *
@@ -369,6 +379,9 @@ ttymode_with_io(VALUE io, VALUE (*func)(VALUE, VALUE), VALUE farg, void (*setter
  *
  * The parameter +time+ specifies the timeout in _seconds_ with a
  * precision of 1/10 of a second. (default: 0)
+ *
+ * If the parameter +intr+ is +true+, enables break, interrupt, quit,
+ * and suspend special characters.
  *
  * Refer to the manual page of termios for further details.
  *
@@ -383,11 +396,11 @@ console_raw(int argc, VALUE *argv, VALUE io)
 
 /*
  * call-seq:
- *   io.raw!(min: nil, time: nil)
+ *   io.raw!(min: nil, time: nil, intr: nil) -> io
  *
- * Enables raw mode.
+ * Enables raw mode, and returns +io+.
  *
- * If the terminal mode needs to be back, use io.raw { ... }.
+ * If the terminal mode needs to be back, use <code>io.raw { ... }</code>.
  *
  * See IO#raw for details on the parameters.
  *
@@ -403,9 +416,9 @@ console_set_raw(int argc, VALUE *argv, VALUE io)
 
     GetOpenFile(io, fptr);
     fd = GetReadFD(fptr);
-    if (!getattr(fd, &t)) rb_sys_fail(0);
+    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
     set_rawmode(&t, optp);
-    if (!setattr(fd, &t)) rb_sys_fail(0);
+    if (!setattr(fd, &t)) sys_fail_fptr(fptr);
     return io;
 }
 
@@ -446,9 +459,9 @@ console_set_cooked(VALUE io)
 
     GetOpenFile(io, fptr);
     fd = GetReadFD(fptr);
-    if (!getattr(fd, &t)) rb_sys_fail(0);
+    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
     set_cookedmode(&t, NULL);
-    if (!setattr(fd, &t)) rb_sys_fail(0);
+    if (!setattr(fd, &t)) sys_fail_fptr(fptr);
     return io;
 }
 
@@ -483,7 +496,7 @@ nogvl_getch(void *p)
 
 /*
  * call-seq:
- *   io.getch(min: nil, time: nil)       -> char
+ *   io.getch(min: nil, time: nil, intr: nil) -> char
  *
  * Reads and returns a character in raw mode.
  *
@@ -501,28 +514,50 @@ console_getch(int argc, VALUE *argv, VALUE io)
     rb_io_t *fptr;
     VALUE str;
     wint_t c;
-    int w, len;
+    int len;
     char buf[8];
     wint_t wbuf[2];
+# ifndef HAVE_RB_IO_WAIT
     struct timeval *to = NULL, tv;
+# else
+    VALUE timeout = Qnil;
+# endif
 
     GetOpenFile(io, fptr);
     if (optp) {
 	if (optp->vtime) {
+# ifndef HAVE_RB_IO_WAIT
 	    to = &tv;
+# else
+	    struct timeval tv;
+# endif
 	    tv.tv_sec = optp->vtime / 10;
 	    tv.tv_usec = (optp->vtime % 10) * 100000;
+# ifdef HAVE_RB_IO_WAIT
+	    timeout = rb_scheduler_timeout(&tv);
+# endif
 	}
-	if (optp->vmin != 1) {
-	    rb_warning("min option ignored");
+	switch (optp->vmin) {
+	  case 1: /* default */
+	    break;
+	  case 0: /* return nil when timed out */
+	    if (optp->vtime) break;
+	    /* fallthru */
+	  default:
+	    rb_warning("min option larger than 1 ignored");
 	}
 	if (optp->intr) {
-	    w = rb_wait_for_single_fd(fptr->fd, RB_WAITFD_IN, to);
+# ifndef HAVE_RB_IO_WAIT
+	    int w = rb_wait_for_single_fd(fptr->fd, RB_WAITFD_IN, to);
 	    if (w < 0) rb_eof_error();
 	    if (!(w & RB_WAITFD_IN)) return Qnil;
+# else
+	    VALUE result = rb_io_wait(io, RUBY_IO_READABLE, timeout);
+	    if (result == Qfalse) return Qnil;
+# endif
 	}
-	else {
-	    rb_warning("vtime option ignored if intr flag is unset");
+	else if (optp->vtime) {
+	    rb_warning("Non-zero vtime option ignored if intr flag is unset");
 	}
     }
     len = (int)(VALUE)rb_thread_call_without_gvl(nogvl_getch, wbuf, RUBY_UBF_IO, 0);
@@ -583,12 +618,12 @@ console_set_echo(VALUE io, VALUE f)
 
     GetOpenFile(io, fptr);
     fd = GetReadFD(fptr);
-    if (!getattr(fd, &t)) rb_sys_fail(0);
+    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
     if (RTEST(f))
 	set_echo(&t, NULL);
     else
 	set_noecho(&t, NULL);
-    if (!setattr(fd, &t)) rb_sys_fail(0);
+    if (!setattr(fd, &t)) sys_fail_fptr(fptr);
     return io;
 }
 
@@ -609,7 +644,7 @@ console_echo_p(VALUE io)
 
     GetOpenFile(io, fptr);
     fd = GetReadFD(fptr);
-    if (!getattr(fd, &t)) rb_sys_fail(0);
+    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
     return echo_p(&t) ? Qtrue : Qfalse;
 }
 
@@ -693,7 +728,7 @@ console_conmode_get(VALUE io)
 
     GetOpenFile(io, fptr);
     fd = GetReadFD(fptr);
-    if (!getattr(fd, &t)) rb_sys_fail(0);
+    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
 
     return conmode_new(cConmode, &t);
 }
@@ -717,7 +752,7 @@ console_conmode_set(VALUE io, VALUE mode)
     r = *t;
     GetOpenFile(io, fptr);
     fd = GetReadFD(fptr);
-    if (!setattr(fd, &r)) rb_sys_fail(0);
+    if (!setattr(fd, &r)) sys_fail_fptr(fptr);
 
     return mode;
 }
@@ -759,7 +794,7 @@ console_winsize(VALUE io)
 
     GetOpenFile(io, fptr);
     fd = GetWriteFD(fptr);
-    if (!getwinsize(fd, &ws)) rb_sys_fail(0);
+    if (!getwinsize(fd, &ws)) sys_fail_fptr(fptr);
     return rb_assoc_new(INT2NUM(winsize_row(&ws)), INT2NUM(winsize_col(&ws)));
 }
 
@@ -806,7 +841,7 @@ console_set_winsize(VALUE io, VALUE size)
     SET(xpixel);
     SET(ypixel);
 #undef SET
-    if (!setwinsize(fd, &ws)) rb_sys_fail(0);
+    if (!setwinsize(fd, &ws)) sys_fail_fptr(fptr);
 #elif defined _WIN32
     wh = (HANDLE)rb_w32_get_osfhandle(fd);
 #define SET(m) new##m = NIL_P(m) ? 0 : (unsigned short)NUM2UINT(m)
@@ -881,7 +916,7 @@ console_iflush(VALUE io)
     GetOpenFile(io, fptr);
     fd = GetReadFD(fptr);
 #if defined HAVE_TERMIOS_H || defined HAVE_TERMIO_H
-    if (tcflush(fd, TCIFLUSH)) rb_sys_fail(0);
+    if (tcflush(fd, TCIFLUSH)) sys_fail_fptr(fptr);
 #endif
     (void)fd;
     return io;
@@ -904,7 +939,7 @@ console_oflush(VALUE io)
     GetOpenFile(io, fptr);
     fd = GetWriteFD(fptr);
 #if defined HAVE_TERMIOS_H || defined HAVE_TERMIO_H
-    if (tcflush(fd, TCOFLUSH)) rb_sys_fail(0);
+    if (tcflush(fd, TCOFLUSH)) sys_fail_fptr(fptr);
 #endif
     (void)fd;
     return io;
@@ -931,11 +966,11 @@ console_ioflush(VALUE io)
     fd1 = GetReadFD(fptr);
     fd2 = GetWriteFD(fptr);
     if (fd2 != -1 && fd1 != fd2) {
-	if (tcflush(fd1, TCIFLUSH)) rb_sys_fail(0);
-	if (tcflush(fd2, TCOFLUSH)) rb_sys_fail(0);
+	if (tcflush(fd1, TCIFLUSH)) sys_fail_fptr(fptr);
+	if (tcflush(fd2, TCOFLUSH)) sys_fail_fptr(fptr);
     }
     else {
-	if (tcflush(fd1, TCIOFLUSH)) rb_sys_fail(0);
+	if (tcflush(fd1, TCIOFLUSH)) sys_fail_fptr(fptr);
     }
 #endif
     return io;
@@ -954,7 +989,7 @@ console_beep(VALUE io)
     MessageBeep(0);
 #else
     if (write(fd, "\a", 1) < 0)
-	rb_sys_fail(0);
+	sys_fail_fptr(fptr);
 #endif
     return io;
 }
@@ -1188,8 +1223,8 @@ console_key_pressed_p(VALUE io, VALUE k)
 }
 #else
 struct query_args {
-    const char *qstr;
-    int opt;
+    char qstr[6];
+    unsigned char opt;
 };
 
 static int
@@ -1490,7 +1525,7 @@ console_dev(int argc, VALUE *argv, VALUE klass)
 
 /*
  * call-seq:
- *   io.getch(min: nil, time: nil)       -> char
+ *   io.getch(min: nil, time: nil, intr: nil) -> char
  *
  * See IO#getch.
  */
@@ -1527,7 +1562,7 @@ static VALUE
 str_chomp(VALUE str)
 {
     if (!NIL_P(str)) {
-	str = rb_funcallv(str, rb_intern("chomp!"), 0, 0);
+	rb_funcallv(str, id_chomp_bang, 0, 0);
     }
     return str;
 }
@@ -1538,6 +1573,10 @@ str_chomp(VALUE str)
  *
  * Reads and returns a line without echo back.
  * Prints +prompt+ unless it is +nil+.
+ *
+ * The newline character that terminates the
+ * read line is removed from the returned string,
+ * see String#chomp!.
  *
  * You must require 'io/console' to use this method.
  */
@@ -1583,6 +1622,7 @@ Init_console(void)
     id_getc = rb_intern("getc");
 #if ENABLE_IO_GETPASS
     id_gets = rb_intern("gets");
+    id_chomp_bang = rb_intern("chomp!");
 #endif
     id_console = rb_intern("console");
     id_close = rb_intern("close");
