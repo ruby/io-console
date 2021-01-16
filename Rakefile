@@ -2,8 +2,7 @@ require "bundler/gem_tasks"
 require "rake/testtask"
 
 name = "io/console"
-specfile = name.tr("/", "-")+".gemspec"
-spec = eval(File.read(specfile), nil, specfile)
+helper = Bundler::GemHelper.instance
 
 Rake::TestTask.new(:test) do |t|
   t.libs << "test" << "test/lib"
@@ -18,38 +17,44 @@ Rake::ExtensionTask.new(name)
 task :default => [:compile, :test]
 
 task "build" => "date_epoch"
+task "build" => "build:java"
 
 java_pkg = nil
 task 'build:java' => 'date_epoch' do |t|
-  file_name = "#{spec.full_name}-java.gem"
-  gem_command = ENV["GEM_COMMAND"]
-  gem_command &&= gem_command.shellsplit
-  Bundler::GemHelper.instance.instance_eval do
-    sh([*(gem_command || "gem"), "build", "-V", "--platform=java", specfile]) do
-      FileUtils.mkdir_p("pkg")
-      FileUtils.mv(file_name, "pkg")
-      Bundler.ui.confirm "#{spec.name} #{spec.version} built to pkg/#{file_name}."
-    end
-    java_pkg = File.join("pkg", file_name)
-  end
+  java_pkg = helper.build_java_gem
 end
 
 task 'release:rubygem_push' => 'release:rubygem_push:java'
 desc 'Push binary gems for Java platform'
 task 'release:rubygem_push:java' => 'build:java' do
-  Bundler::GemHelper.instance.instance_eval do
-    if gem_push?
-      Bundler.ui.confirm "Pushing #{java_pkg}"
-      rubygem_push(java_pkg)
-    end
-  end
+  helper.push_gem(java_pkg)
 end
 
 task "date_epoch" do
   ENV["SOURCE_DATE_EPOCH"] = IO.popen(%W[git -C #{__dir__} log -1 --format=%ct], &:read).chomp
 end
 
-helper = Bundler::GemHelper.instance
+def helper.build_java_gem
+  file_name = nil
+  sh([*gem_command, "build", "-V", "--platform=java", spec_path]) do
+    file_name = built_gem_path
+    pkg = File.join(base, "pkg")
+    FileUtils.mkdir_p(pkg)
+    FileUtils.mv(file_name, pkg)
+    file_name = File.basename(file_name)
+    Bundler.ui.confirm "#{name} #{version} built to pkg/#{file_name}."
+    file_name = File.join(pkg, file_name)
+  end
+  file_name
+end
+
+def helper.push_gem(path)
+  if gem_push?
+    Bundler.ui.confirm "Pushing #{path}"
+    rubygem_push(path)
+  end
+end
+
 def helper.update_gemspec
   path = "#{__dir__}/#{gemspec.name}.gemspec"
   File.open(path, "r+b") do |f|
