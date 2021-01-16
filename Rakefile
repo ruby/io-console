@@ -25,7 +25,7 @@ task 'build:java' => 'date_epoch' do |t|
   gem_command = ENV["GEM_COMMAND"]
   gem_command &&= gem_command.shellsplit
   Bundler::GemHelper.instance.instance_eval do
-    sh([*(gem_command || "gem"), "build", "-V", specfile, "--", "--platform=java"]) do
+    sh([*(gem_command || "gem"), "build", "-V", "--platform=java", specfile]) do
       FileUtils.mkdir_p("pkg")
       FileUtils.mv(file_name, "pkg")
       Bundler.ui.confirm "#{spec.name} #{spec.version} built to pkg/#{file_name}."
