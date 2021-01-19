@@ -11,10 +11,13 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList["test/**/test_*.rb"]
 end
 
-require 'rake/extensiontask'
-Rake::ExtensionTask.new(name)
+if RUBY_ENGINE == "ruby"
+  require 'rake/extensiontask'
+  Rake::ExtensionTask.new(name)
+  task :test => :compile
+end
 
-task :default => [:compile, :test]
+task :default => :test
 
 task "build" => "date_epoch"
 task "build" => "build:java"
