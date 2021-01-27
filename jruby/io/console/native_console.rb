@@ -26,9 +26,9 @@ class IO
   end
   private :ttymode
 
-  def ttymode_yield(block, &setup)
+  def ttymode_yield(block, **opts, &setup)
     begin
-      orig_termios = ttymode { |t| setup.call(t) }
+      orig_termios = ttymode { |t| setup.call(t, **opts) }
       block.call(self)
     ensure
       if orig_termios && LibC.tcsetattr(self.fileno, LibC::TCSADRAIN, orig_termios) != 0
@@ -38,13 +38,16 @@ class IO
   end
   private :ttymode_yield
 
-  TTY_RAW = Proc.new do |t|
+  TTY_RAW = Proc.new do |t, min: 1|
     LibC.cfmakeraw(t)
     t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
+    if min >= 0
+      t[:c_cc][LibC::VMIN] = min
+    end
   end
 
-  def raw(*, &block)
-    ttymode_yield(block, &TTY_RAW)
+  def raw(*, min: 1, &block)
+    ttymode_yield(block, min: min, &TTY_RAW)
   end
 
   def raw!(*)
