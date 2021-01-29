@@ -551,8 +551,5 @@ TestIO_Console.class_eval do
     assert_separately %w"--disable=gems -rio/console -rstringio", %q{
       assert_operator(StringIO, :method_defined?, :getch)
     }
-    assert_separately %w"--disable=gems -rstringio", %q{
-      assert_not_operator(StringIO, :method_defined?, :getch)
-    }
   end
 end
