@@ -1,7 +1,7 @@
 # Methods common to all backend impls
 class IO
-  def getch(*, min: 1)
-    raw(min: min) do
+  def getch(*, **opts)
+    raw(**opts) do
       getc
     end
   end

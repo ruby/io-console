@@ -38,16 +38,24 @@ class IO
   end
   private :ttymode_yield
 
-  TTY_RAW = Proc.new do |t, min: 1|
+  TTY_RAW = Proc.new do |t, min: 1, time: nil, intr: nil|
     LibC.cfmakeraw(t)
     t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
     if min >= 0
       t[:c_cc][LibC::VMIN] = min
     end
+    if time
+      t[:c_cc][LibC::VTIME] = time * 10
+    end
+    if intr
+      t[:c_iflag] |= LibC::BRKINT
+      t[:c_lflag] |= LibC::ISIG
+      t[:c_oflag] |= LibC::OPOST
+    end
   end
 
-  def raw(*, min: 1, &block)
-    ttymode_yield(block, min: min, &TTY_RAW)
+  def raw(*, **kwargs, &block)
+    ttymode_yield(block, **kwargs, &TTY_RAW)
   end
 
   def raw!(*)
