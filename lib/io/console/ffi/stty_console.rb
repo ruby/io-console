@@ -68,7 +68,20 @@ class IO
   end
 
   def winsize=(size)
-    stty("rows #{size[0]} cols #{size[1]}")
+    size = size.to_ary unless size.kind_of?(Array)
+    sizelen = size.size
+
+    if sizelen != 2 && sizelen != 4
+      raise ArgumentError.new("wrong number of arguments (given #{sizelen}, expected 2 or 4)")
+    end
+
+    row, col, xpixel, ypixel = size
+
+    if sizelen == 4
+      warn "stty io/console does not support pixel winsize"
+    end
+
+    stty("rows #{row} cols #{col}")
   end
 
   def iflush
