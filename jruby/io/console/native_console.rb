@@ -230,7 +230,7 @@ class IO
       end
     end
 
-    if !con #&& $stdin.tty?
+    if !con && $stdin.tty?
       con = File.open('/dev/tty', 'r+')
       con.sync = true
       @console = con
