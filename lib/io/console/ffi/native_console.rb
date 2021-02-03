@@ -104,13 +104,25 @@ class IO
   end
 
   def winsize=(size)
+    size = size.to_ary unless size.kind_of?(Array)
+    sizelen = size.size
+
+    if sizelen != 2 && sizelen != 4
+      raise ArgumentError.new("wrong number of arguments (given #{sizelen}, expected 2 or 4)")
+    end
+
+    row, col, xpixel, ypixel = size
+
     ws = LibC::Winsize.new
     if LibC.ioctl(self.fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
       raise SystemCallError.new("ioctl(TIOCGWINSZ)", FFI.errno)
     end
 
-    ws[:ws_row] = size[0]
-    ws[:ws_col] = size[1]
+    ws[:ws_row] = row
+    ws[:ws_col] = col
+    ws[:ws_xpixel] = xpixel&.to_i || 0
+    ws[:ws_ypixel] = ypixel&.to_i || 0
+
     if LibC.ioctl(self.fileno, LibC::TIOCSWINSZ, :pointer, ws.pointer) != 0
       raise SystemCallError.new("ioctl(TIOCSWINSZ)", FFI.errno)
     end
