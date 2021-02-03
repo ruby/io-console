@@ -7,7 +7,6 @@ helper = Bundler::GemHelper.instance
 Rake::TestTask.new(:test) do |t|
   t.libs << "test" << "test/lib"
   t.libs << "lib"
-  t.libs << "jruby" if RUBY_ENGINE == 'jruby'
   t.ruby_opts << "-rhelper"
   t.test_files = FileList["test/**/test_*.rb"]
 end
