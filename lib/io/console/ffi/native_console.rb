@@ -142,8 +142,7 @@ class IO
 
   def cursor
     raw do
-      write "\e[6n"
-      flush
+      syswrite "\e[6n"
 
       return nil if getbyte != 0x1b
       return nil if getbyte != ?[.ord
@@ -151,7 +150,7 @@ class IO
       num = 0
       result = []
 
-      while (b = getbyte)
+      while b = getbyte
         c = b.to_i
         if c == ?;.ord
           result.push num
@@ -167,7 +166,7 @@ class IO
         end
       end
 
-      result.push b
+      result
     end
   end
 
@@ -177,42 +176,38 @@ class IO
     raise "expected 2D coordinates" unless pos.size == 2
 
     x, y = pos
-    write(format("\x1b[%d;%dH", x + 1, y + 1))
+    syswrite(format("\x1b[%d;%dH", x + 1, y + 1))
 
     self
   end
 
-  def cursor_down
+  def cursor_down(n)
     raw do
-      write "\e[3B"
-      flush
+      syswrite "\x1b[#{n}B"
     end
 
     self
   end
 
-  def cursor_right
+  def cursor_right(n)
     raw do
-      write "\e[4C"
-      flush
+      syswrite "\x1b[#{n}C"
     end
 
     self
   end
 
-  def cursor_left
+  def cursor_left(n)
     raw do
-      write "\e[2D"
-      flush
+      syswrite "\x1b[#{n}D"
     end
 
     self
   end
 
-  def cursor_down
+  def cursor_up(n)
     raw do
-      write "\e[1A"
-      flush
+      syswrite "\x1b[#{n}A"
     end
 
     self
