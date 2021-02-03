@@ -242,8 +242,13 @@ class IO
       end
     end
 
-    if !con && $stdin.tty?
-      con = File.open('/dev/tty', 'r+')
+    if !con
+      begin
+        con = File.open('/dev/tty', 'r+')
+      rescue
+        return nil
+      end
+
       con.sync = true
       @console = con
     end
