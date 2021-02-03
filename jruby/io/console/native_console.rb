@@ -128,6 +128,84 @@ class IO
     raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCIOFLUSH) == 0
   end
 
+  def cursor
+    raw do
+      write "\e[6n"
+      flush
+
+      return nil if getbyte != 0x1b
+      return nil if getbyte != ?[.ord
+
+      num = 0
+      result = []
+
+      while (b = getbyte)
+        c = b.to_i
+        if c == ?;.ord
+          result.push num
+          num = 0
+        elsif c >= ?0.ord && c <= ?9.ord
+          num = num * 10 + c - ?0.ord
+          #elsif opt && c == opt
+        else
+          last = c
+          result.push num
+          b = last.chr
+          break
+        end
+      end
+
+      result.push b
+    end
+  end
+
+  def cursor=(pos)
+    pos = pos.to_ary if !pos.kind_of?(Array)
+
+    raise "expected 2D coordinates" unless pos.size == 2
+
+    x, y = pos
+    write(format("\x1b[%d;%dH", x + 1, y + 1))
+
+    self
+  end
+
+  def cursor_down
+    raw do
+      write "\e[3B"
+      flush
+    end
+
+    self
+  end
+
+  def cursor_right
+    raw do
+      write "\e[4C"
+      flush
+    end
+
+    self
+  end
+
+  def cursor_left
+    raw do
+      write "\e[2D"
+      flush
+    end
+
+    self
+  end
+
+  def cursor_down
+    raw do
+      write "\e[1A"
+      flush
+    end
+
+    self
+  end
+
   # TODO: Windows version uses "conin$" and "conout$" instead of /dev/tty
   def self.console(sym = nil, *args)
     raise TypeError, "expected Symbol, got #{sym.class}" unless sym.nil? || sym.kind_of?(Symbol)
@@ -152,7 +230,7 @@ class IO
       end
     end
 
-    if !con && $stdin.tty?
+    if !con #&& $stdin.tty?
       con = File.open('/dev/tty', 'r+')
       con.sync = true
       @console = con
