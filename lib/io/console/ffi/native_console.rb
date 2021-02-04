@@ -13,13 +13,13 @@ class IO
   def ttymode
     termios = LibC::Termios.new
     if LibC.tcgetattr(self.fileno, termios) != 0
-      raise SystemCallError.new("tcgetattr", FFI.errno)
+      raise SystemCallError.new(path, FFI.errno)
     end
 
     if block_given?
       yield tmp = termios.dup
-      if LibC.tcsetattr(self.fileno, LibC::TCSADRAIN, tmp) != 0
-        raise SystemCallError.new("tcsetattr", FFI.errno)
+      if LibC.tcsetattr(self.fileno, LibC::TCSANOW, tmp) != 0
+        raise SystemCallError.new(path, FFI.errno)
       end
     end
     termios
@@ -31,8 +31,8 @@ class IO
       orig_termios = ttymode { |t| setup.call(t, **opts) }
       block.call(self)
     ensure
-      if orig_termios && LibC.tcsetattr(self.fileno, LibC::TCSADRAIN, orig_termios) != 0
-        raise SystemCallError.new("tcsetattr", FFI.errno)
+      if orig_termios && LibC.tcsetattr(self.fileno, LibC::TCSANOW, orig_termios) != 0
+        raise SystemCallError.new(path, FFI.errno)
       end
     end
   end
@@ -44,9 +44,7 @@ class IO
     if min >= 0
       t[:c_cc][LibC::VMIN] = min
     end
-    if time
-      t[:c_cc][LibC::VTIME] = time * 10
-    end
+    t[:c_cc][LibC::VTIME] = (time&.to_i || 0) * 10
     if intr
       t[:c_iflag] |= LibC::BRKINT
       t[:c_lflag] |= LibC::ISIG
@@ -162,11 +160,12 @@ class IO
           last = c
           result.push num
           b = last.chr
+          return nil unless b == ?R
           break
         end
       end
 
-      result
+      result.map(&:pred)
     end
   end
 
