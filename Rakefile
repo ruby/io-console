@@ -11,7 +11,7 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList["test/**/test_*.rb"]
 end
 
-if RUBY_ENGINE == "ruby"
+if RUBY_ENGINE == "ruby" || RUBY_ENGINE == "truffleruby"
   require 'rake/extensiontask'
   Rake::ExtensionTask.new(name)
   task :test => :compile
