@@ -1,9 +1,5 @@
 name: 'gem-test'
 description: 'Test gem'
-inputs:
-  ruby-version:
-    description: 'Testing Ruby version'
-    required: true
 
 runs:
   using: "composite"
