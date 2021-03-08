@@ -8,9 +8,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up Bundler
-      run: gem install bundler --no-document
-      shell: sh
     - name: Install dependencies
       run: bundle install
       shell: sh
