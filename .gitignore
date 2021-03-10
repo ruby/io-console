@@ -1,7 +1,9 @@
 /coverage/
 /pkg/
 /tmp/
+/logs/
 
+ChangeLog
 Gemfile.lock
 
 *.bundle
