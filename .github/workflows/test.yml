@@ -1,13 +1,14 @@
-name: ubuntu
+name: test
 
 on: [push, pull_request]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
     strategy:
       matrix:
         ruby: [ 'head', '3.0', '2.7', '2.6' ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
     steps:
     - name: git config
       run: |
@@ -19,10 +20,18 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
-    - uses: ./.github/actions/test
-    - uses: ./.github/actions/build
-      id: build
+    - name: Install dependencies
+      run: bundle install
+    - name: Run test
+      run: rake
+    - id: build
+      run: |
+        rake build
+        echo "::set-output name=pkg::${GITHUB_REPOSITORY#*/}-${RUNNING_OS%-*}"
+      env:
+        RUNNING_OS: ${{matrix.os}}
       if: "matrix.ruby == '3.0'"
+      shell: bash
     - name: Upload package
       uses: actions/upload-artifact@v2
       with:
