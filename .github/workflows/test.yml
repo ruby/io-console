@@ -1,9 +1,14 @@
 name: test
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '25 10 * * *'
 
 jobs:
   test:
+    if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
     strategy:
       matrix:
         ruby: [ 'head', '3.0', '2.7', '2.6' ]
