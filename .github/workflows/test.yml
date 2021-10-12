@@ -32,6 +32,8 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true # 'bundle install' and cache
+    - name: Experiment with a manual bundle install
+      run: bundle install
     - name: Run test
       run: rake # Attempting without 'bundle exec'
     - id: build
