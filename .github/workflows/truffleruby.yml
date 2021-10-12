@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby: [ 'truffleruby-head' ]
+        ruby: [ 'truffleruby', 'truffleruby-head' ]
     steps:
     - name: git config
       run: |
