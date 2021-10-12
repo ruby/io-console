@@ -10,8 +10,8 @@ jobs:
   test:
     if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: [false]
         ruby: [ 'head', '3.0', '2.7', '2.6' ]
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         include:
