@@ -31,6 +31,8 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true # 'bundle install' and cache
+    - if: ${{ matrix.ruby == '3.0' }}
+      run: gem install bundler
     - if: ${{ matrix.ruby == '2.5' || matrix.ruby == '2.6' }}
       run: gem update --system
     - name: Run test
