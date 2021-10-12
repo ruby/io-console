@@ -33,7 +33,7 @@ jobs:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true # 'bundle install' and cache
     - name: Run test
-      run: bundle exec rake
+      run: rake # Attempting without 'bundle exec'
     - id: build
       run: |
         bundle exec rake build
