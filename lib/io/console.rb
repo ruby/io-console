@@ -1,5 +1,5 @@
 if RUBY_ENGINE == 'ruby' || RUBY_ENGINE == 'truffleruby'
-  require_relative 'console.so'
+  raise LoadError, 'loading unexpected file'
 else
   require_relative 'console/ffi/console'
 end

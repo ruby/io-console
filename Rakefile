@@ -4,17 +4,21 @@ require "rake/testtask"
 name = "io/console"
 helper = Bundler::GemHelper.instance
 
-Rake::TestTask.new(:test) do |t|
-  t.libs << "test" << "test/lib"
-  t.libs << "lib"
-  t.ruby_opts << "-rhelper"
-  t.test_files = FileList["test/**/test_*.rb"]
-end
-
 if RUBY_ENGINE == "ruby" || RUBY_ENGINE == "truffleruby"
   require 'rake/extensiontask'
-  Rake::ExtensionTask.new(name)
+  extask = Rake::ExtensionTask.new(name) do |x|
+    x.lib_dir << "/#{RUBY_VERSION}/#{x.platform}"
+  end
   task :test => :compile
+end
+
+Rake::TestTask.new(:test) do |t|
+  if extask
+    t.libs = [extask.lib_dir]
+  end
+  t.libs << "test/lib"
+  t.ruby_opts << "-rhelper"
+  t.test_files = FileList["test/**/test_*.rb"]
 end
 
 task :sync_tool do
