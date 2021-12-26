@@ -10,9 +10,15 @@ jobs:
   test:
     if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
     strategy:
+      fail-fast: false
       matrix:
         ruby: [ 'head', '3.0', '2.7', '2.6' ]
         os: [ ubuntu-latest, macos-latest, windows-latest ]
+        include:
+          - { os: ubuntu-latest, ruby: jruby-head }
+          - { os: ubuntu-latest, ruby: jruby-9.2 }
+          - { os: ubuntu-latest, ruby: truffleruby }
+          - { os: ubuntu-latest, ruby: truffleruby-head }
     runs-on: ${{ matrix.os }}
     steps:
     - name: git config
@@ -21,14 +27,14 @@ jobs:
         git config --global core.eol lf
         git config --global advice.detachedHead 0
     - uses: actions/checkout@v2
-    - name: Set up Ruby
+    - name: Set up Ruby ${{ matrix.ruby }}
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
-    - name: Install dependencies
+    - name: Experiment with a manual bundle install
       run: bundle install
     - name: Run test
-      run: rake
+      run: rake # Attempting without 'bundle exec'
     - id: build
       run: |
         rake build
