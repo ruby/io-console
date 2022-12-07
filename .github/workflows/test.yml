@@ -39,7 +39,7 @@ jobs:
     - id: build
       run: |
         rake build
-        echo "::set-output name=pkg::${GITHUB_REPOSITORY#*/}-${RUNNING_OS%-*}"
+        echo "pkg=${GITHUB_REPOSITORY#*/}-${RUNNING_OS%-*}" >> $GITHUB_OUTPUT
       env:
         RUNNING_OS: ${{matrix.os}}
       if: "matrix.ruby == '3.0'"
