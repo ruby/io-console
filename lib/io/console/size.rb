@@ -16,8 +16,8 @@ rescue LoadError
 else
   # returns console window size
   def IO.console_size
-    console.winsize
+    IO.console.winsize
   rescue NoMethodError
-    default_console_size
+    IO.default_console_size
   end
 end
