@@ -1,6 +1,8 @@
 # frozen_string_literal: false
 require 'mkmf'
 
+have_func("rb_io_descriptor")
+
 ok = true if RUBY_ENGINE == "ruby" || RUBY_ENGINE == "truffleruby"
 hdr = nil
 case
