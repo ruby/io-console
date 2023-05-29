@@ -109,6 +109,18 @@ io_path_fallback(VALUE io)
 #define rb_io_path io_path_fallback
 #endif
 
+#ifndef HAVE_RB_IO_GET_WRITE_IO
+static VALUE
+io_get_write_io_fallback(VALUE io)
+{
+    rb_io_t *fptr;
+    GetOpenFile(io, fptr);
+    VALUE wio = fptr->tied_io_for_writing;
+    return wio ? wio : io;
+}
+#define rb_io_get_write_io io_get_write_io_fallback
+#endif
+
 #define sys_fail(io) rb_sys_fail_str(rb_io_path(io))
 
 #ifndef HAVE_RB_F_SEND
