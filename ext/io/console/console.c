@@ -89,22 +89,24 @@ extern VALUE rb_scheduler_timeout(struct timeval *timeout);
 
 #ifndef HAVE_RB_IO_DESCRIPTOR
 static int
-rb_io_descriptor(VALUE io)
+io_descriptor_fallback(VALUE io)
 {
     rb_io_t *fptr;
     GetOpenFile(io, fptr);
     return fptr->fd;
 }
+#define rb_io_descriptor io_descriptor_fallback
 #endif
 
 #ifndef HAVE_RB_IO_PATH
 static VALUE
-rb_io_path(VALUE io)
+io_path_fallback(VALUE io)
 {
     rb_io_t *fptr;
     GetOpenFile(io, fptr);
     return fptr->pathv;
 }
+#define rb_io_path io_path_fallback
 #endif
 
 #define sys_fail(io) rb_sys_fail_str(rb_io_path(io))
