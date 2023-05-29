@@ -2,6 +2,7 @@
 require 'mkmf'
 
 have_func("rb_io_descriptor")
+have_func("rb_io_path")
 
 ok = true if RUBY_ENGINE == "ruby" || RUBY_ENGINE == "truffleruby"
 hdr = nil

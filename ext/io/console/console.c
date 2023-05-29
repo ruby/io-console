@@ -97,7 +97,17 @@ rb_io_descriptor(VALUE io)
 }
 #endif
 
-#define sys_fail_fptr(fptr) rb_sys_fail_str((fptr)->pathv)
+#ifndef HAVE_RB_IO_PATH
+static VALUE
+rb_io_path(VALUE io)
+{
+    rb_io_t *fptr;
+    GetOpenFile(io, fptr);
+    return fptr->pathv;
+}
+#endif
+
+#define sys_fail_io(io) rb_sys_fail_str(rb_io_path(io))
 
 #ifndef HAVE_RB_F_SEND
 #ifndef RB_PASS_CALLED_KEYWORDS
@@ -434,9 +444,9 @@ console_set_raw(int argc, VALUE *argv, VALUE io)
     conmode t;
     rawmode_arg_t opts, *optp = rawmode_opt(&argc, argv, 0, 0, &opts);
     int fd = GetReadFD(io);
-    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
+    if (!getattr(fd, &t)) sys_fail_io(io);
     set_rawmode(&t, optp);
-    if (!setattr(fd, &t)) sys_fail_fptr(fptr);
+    if (!setattr(fd, &t)) sys_fail_io(io);
     return io;
 }
 
@@ -473,9 +483,9 @@ console_set_cooked(VALUE io)
 {
     conmode t;
     int fd = GetReadFD(io);
-    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
+    if (!getattr(fd, &t)) sys_fail_io(io);
     set_cookedmode(&t, NULL);
-    if (!setattr(fd, &t)) sys_fail_fptr(fptr);
+    if (!setattr(fd, &t)) sys_fail_io(io);
     return io;
 }
 
@@ -629,14 +639,14 @@ console_set_echo(VALUE io, VALUE f)
     conmode t;
     int fd = GetReadFD(io);
 
-    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
+    if (!getattr(fd, &t)) sys_fail_io(io);
 
     if (RTEST(f))
         set_echo(&t, NULL);
     else
         set_noecho(&t, NULL);
 
-    if (!setattr(fd, &t)) sys_fail_fptr(fptr);
+    if (!setattr(fd, &t)) sys_fail_io(io);
 
     return io;
 }
@@ -655,7 +665,7 @@ console_echo_p(VALUE io)
     conmode t;
     int fd = GetReadFD(io);
 
-    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
+    if (!getattr(fd, &t)) sys_fail_io(io);
     return echo_p(&t) ? Qtrue : Qfalse;
 }
 
@@ -736,7 +746,7 @@ console_conmode_get(VALUE io)
     conmode t;
     int fd = GetReadFD(io);
 
-    if (!getattr(fd, &t)) sys_fail_fptr(fptr);
+    if (!getattr(fd, &t)) sys_fail_io(io);
 
     return conmode_new(cConmode, &t);
 }
@@ -753,12 +763,12 @@ static VALUE
 console_conmode_set(VALUE io, VALUE mode)
 {
     conmode *t, r;
-    int fd = GetReadFD(io;)
+    int fd = GetReadFD(io);
 
     TypedData_Get_Struct(mode, conmode, &conmode_type, t);
     r = *t;
 
-    if (!setattr(fd, &r)) sys_fail_fptr(fptr);
+    if (!setattr(fd, &r)) sys_fail_io(io);
 
     return mode;
 }
@@ -794,13 +804,11 @@ typedef CONSOLE_SCREEN_BUFFER_INFO rb_console_size_t;
 static VALUE
 console_winsize(VALUE io)
 {
-    rb_io_t *fptr;
     int fd;
     rb_console_size_t ws;
 
-    GetOpenFile(io, fptr);
-    fd = GetWriteFD(fptr);
-    if (!getwinsize(fd, &ws)) sys_fail_fptr(fptr);
+    fd = GetWriteFD(io);
+    if (!getwinsize(fd, &ws)) sys_fail_io(io);
     return rb_assoc_new(INT2NUM(winsize_row(&ws)), INT2NUM(winsize_col(&ws)));
 }
 
@@ -816,7 +824,6 @@ console_winsize(VALUE io)
 static VALUE
 console_set_winsize(VALUE io, VALUE size)
 {
-    rb_io_t *fptr;
     rb_console_size_t ws;
 #if defined _WIN32
     HANDLE wh;
@@ -828,7 +835,6 @@ console_set_winsize(VALUE io, VALUE size)
     int fd;
     long sizelen;
 
-    GetOpenFile(io, fptr);
     size = rb_Array(size);
     if ((sizelen = RARRAY_LEN(size)) != 2 && sizelen != 4) {
 	rb_raise(rb_eArgError,
@@ -838,7 +844,7 @@ console_set_winsize(VALUE io, VALUE size)
     sz = RARRAY_CONST_PTR(size);
     row = sz[0], col = sz[1], xpixel = ypixel = Qnil;
     if (sizelen == 4) xpixel = sz[2], ypixel = sz[3];
-    fd = GetWriteFD(fptr);
+    fd = GetWriteFD(io);
 #if defined TIOCSWINSZ
     ws.ws_row = ws.ws_col = ws.ws_xpixel = ws.ws_ypixel = 0;
 #define SET(m) ws.ws_##m = NIL_P(m) ? 0 : (unsigned short)NUM2UINT(m)
@@ -847,7 +853,7 @@ console_set_winsize(VALUE io, VALUE size)
     SET(xpixel);
     SET(ypixel);
 #undef SET
-    if (!setwinsize(fd, &ws)) sys_fail_fptr(fptr);
+    if (!setwinsize(fd, &ws)) sys_fail_io(io);
 #elif defined _WIN32
     wh = (HANDLE)rb_w32_get_osfhandle(fd);
 #define SET(m) new##m = NIL_P(m) ? 0 : (unsigned short)NUM2UINT(m)
@@ -916,7 +922,7 @@ console_iflush(VALUE io)
 {
 #if defined HAVE_TERMIOS_H || defined HAVE_TERMIO_H
     int fd = GetReadFD(io);
-    if (tcflush(fd, TCIFLUSH)) sys_fail_fptr(fptr);
+    if (tcflush(fd, TCIFLUSH)) sys_fail_io(io);
 #endif
 
     return io;
@@ -933,13 +939,11 @@ console_iflush(VALUE io)
 static VALUE
 console_oflush(VALUE io)
 {
-    rb_io_t *fptr;
     int fd;
 
-    GetOpenFile(io, fptr);
-    fd = GetWriteFD(fptr);
+    fd = GetWriteFD(io);
 #if defined HAVE_TERMIOS_H || defined HAVE_TERMIO_H
-    if (tcflush(fd, TCOFLUSH)) sys_fail_fptr(fptr);
+    if (tcflush(fd, TCOFLUSH)) sys_fail_io(io);
 #endif
     (void)fd;
     return io;
@@ -959,13 +963,13 @@ console_ioflush(VALUE io)
 #if defined HAVE_TERMIOS_H || defined HAVE_TERMIO_H
     int fd1 = GetReadFD(io);
     int fd2 = GetWriteFD(io);
-    
+
     if (fd2 != -1 && fd1 != fd2) {
-        if (tcflush(fd1, TCIFLUSH)) sys_fail_fptr(fptr);
-        if (tcflush(fd2, TCOFLUSH)) sys_fail_fptr(fptr);
+        if (tcflush(fd1, TCIFLUSH)) sys_fail_io(io);
+        if (tcflush(fd2, TCOFLUSH)) sys_fail_io(io);
     }
     else {
-        if (tcflush(fd1, TCIOFLUSH)) sys_fail_fptr(fptr);
+        if (tcflush(fd1, TCIOFLUSH)) sys_fail_io(io);
     }
 #endif
 
@@ -975,17 +979,15 @@ console_ioflush(VALUE io)
 static VALUE
 console_beep(VALUE io)
 {
-    rb_io_t *fptr;
     int fd;
 
-    GetOpenFile(io, fptr);
-    fd = GetWriteFD(fptr);
+    fd = GetWriteFD(io);
 #ifdef _WIN32
     (void)fd;
     MessageBeep(0);
 #else
     if (write(fd, "\a", 1) < 0)
-	sys_fail_fptr(fptr);
+	sys_fail_io(io);
 #endif
     return io;
 }
@@ -1432,7 +1434,7 @@ console_dev(int argc, VALUE *argv, VALUE klass)
 
     rb_check_arity(argc, 0, UNLIMITED_ARGUMENTS);
 
-    
+
     if (argc) {
         Check_Type(sym = argv[0], T_SYMBOL);
     }
