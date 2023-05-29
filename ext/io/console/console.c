@@ -845,6 +845,7 @@ console_set_winsize(VALUE io, VALUE size)
     VALUE row, col, xpixel, ypixel;
     const VALUE *sz;
     long sizelen;
+    int fd;
 
     size = rb_Array(size);
     if ((sizelen = RARRAY_LEN(size)) != 2 && sizelen != 4) {
@@ -853,7 +854,7 @@ console_set_winsize(VALUE io, VALUE size)
     sz = RARRAY_CONST_PTR(size);
     row = sz[0], col = sz[1], xpixel = ypixel = Qnil;
     if (sizelen == 4) xpixel = sz[2], ypixel = sz[3];
-    int fd = GetWriteFD(io);
+    fd = GetWriteFD(io);
 #if defined TIOCSWINSZ
     ws.ws_row = ws.ws_col = ws.ws_xpixel = ws.ws_ypixel = 0;
 #define SET(m) ws.ws_##m = NIL_P(m) ? 0 : (unsigned short)NUM2UINT(m)
@@ -1399,7 +1400,7 @@ console_clear_screen(VALUE io)
 
 #ifndef HAVE_RB_IO_OPEN_DESCRIPTOR
 static VALUE
-rb_io_open_descriptor(VALUE klass, int descriptor, int mode, VALUE path, VALUE timeout, rb_io_enc_t *encoding)
+io_open_descriptor_fallback(VALUE klass, int descriptor, int mode, VALUE path, VALUE timeout, void *encoding)
 {
     rb_update_max_fd(descriptor);
 
@@ -1417,6 +1418,7 @@ rb_io_open_descriptor(VALUE klass, int descriptor, int mode, VALUE path, VALUE t
 
     return self;
 }
+#define rb_io_open_descriptor io_open_descriptor_fallback
 #endif
 
 #ifndef HAVE_RB_IO_CLOSED_P
