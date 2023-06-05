@@ -13,13 +13,13 @@ class IO
   def ttymode
     termios = LibC::Termios.new
     if LibC.tcgetattr(self.fileno, termios) != 0
-      raise SystemCallError.new(path, FFI.errno)
+      raise SystemCallError.new(respond_to?(:path) ? path : "tcgetattr", FFI.errno)
     end
 
     if block_given?
       yield tmp = termios.dup
       if LibC.tcsetattr(self.fileno, LibC::TCSANOW, tmp) != 0
-        raise SystemCallError.new(path, FFI.errno)
+        raise SystemCallError.new(respond_to?(:path) ? path : "tcsetattr(TCSANOW)", FFI.errno)
       end
     end
     termios
@@ -32,7 +32,7 @@ class IO
       block.call(self)
     ensure
       if orig_termios && LibC.tcsetattr(self.fileno, LibC::TCSANOW, orig_termios) != 0
-        raise SystemCallError.new(path, FFI.errno)
+        raise SystemCallError.new(respond_to?(:path) ? path : "tcsetattr(TCSANOW)", FFI.errno)
       end
     end
   end
