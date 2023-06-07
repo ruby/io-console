@@ -8,16 +8,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  ruby-versions:
     if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
+    uses: ruby/actions/.github/workflows/ruby_versions.yml@master
+    with:
+      engine: cruby
+
+  test:
+    needs: ruby-versions
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ 'head', '3.2', '3.1', '3.0', '2.7', '2.6' ]
+        ruby: ${{ fromJson(needs.ruby-versions.outputs.versions) }}
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         include:
+          - ruby: jruby
           - ruby: jruby-head
-          - ruby: jruby-9.4
           - ruby: truffleruby
           - ruby: truffleruby-head
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
@@ -32,6 +38,7 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
+        rubygems: latest
     - name: Experiment with a manual bundle install
       run: bundle install
     - name: Run test
