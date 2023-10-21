@@ -1,5 +1,6 @@
 require "bundler/gem_tasks"
 require "rake/testtask"
+require "rdoc/task"
 
 name = "io/console"
 
@@ -19,6 +20,8 @@ Rake::TestTask.new(:test) do |t|
   t.ruby_opts << "-rhelper"
   t.test_files = FileList["test/**/test_*.rb"]
 end
+
+RDoc::Task.new
 
 task :default => :test
 
