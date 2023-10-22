@@ -1,4 +1,4 @@
 LICENSE.txt
 README.md
-ext/io/console/console.c
+ext/
 lib/io/console/size.rb
