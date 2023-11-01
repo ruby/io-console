@@ -47,10 +47,11 @@ jobs:
     - id: build
       run: |
         rake build
-        echo "pkg=${GITHUB_REPOSITORY#*/}-${RUNNING_OS%-*}" >> $GITHUB_OUTPUT
+        echo "pkg=${GITHUB_REPOSITORY#*/}-${PLATFORM:-${RUNNING_OS%-*}}" >> $GITHUB_OUTPUT
       env:
         RUNNING_OS: ${{matrix.os}}
-      if: ${{matrix.ruby == needs.ruby-versions.outputs.latest}}
+        PLATFORM: ${{ startsWith(matrix.ruby, 'jruby') && 'java' || '' }}
+      if: ${{ matrix.ruby == needs.ruby-versions.outputs.latest || matrix.ruby == 'jruby-head' }}
       shell: bash
     - name: Upload package
       uses: actions/upload-artifact@v3
