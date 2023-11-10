@@ -10,3 +10,4 @@ Gemfile.lock
 *.bundle
 *.dll
 *.so
+lib/ffi/io/console/version.rb

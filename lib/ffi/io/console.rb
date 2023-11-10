@@ -21,6 +21,7 @@
 
 require 'rbconfig'
 
+require_relative 'console/version'
 require_relative 'console/common'
 
 # If Windows, always use the stub version
