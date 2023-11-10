@@ -25,18 +25,22 @@ end
 
 major, minor, teeny = helper.gemspec.version.segments
 
+desc "Bump teeny version"
 task "bump:teeny" do
   helper.version = Gem::Version.new("#{major}.#{minor}.#{teeny+1}")
 end
 
+desc "Bump minor version"
 task "bump:minor" do
   helper.version = Gem::Version.new("#{major}.#{minor+1}.0")
 end
 
+desc "Bump major version"
 task "bump:major" do
   helper.version = Gem::Version.new("#{major+1}.0.0")
 end
 
+desc "Bump teeny version"
 task "bump" => "bump:teeny"
 
 task "tag" do
