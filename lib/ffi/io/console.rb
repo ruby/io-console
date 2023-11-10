@@ -21,11 +21,11 @@
 
 require 'rbconfig'
 
-require_relative 'common'
+require_relative 'console/common'
 
 # If Windows, always use the stub version
 if RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
-  require_relative 'stub_console'
+  require_relative 'console/stub_console'
 else
 
   # If Linux or BSD, try to load the native version
@@ -33,7 +33,7 @@ else
     begin
 
       # Attempt to load the native Linux and BSD console logic
-      require_relative 'native_console'
+      require_relative 'console/native_console'
       ready = true
 
     rescue Exception => ex
@@ -48,7 +48,7 @@ else
   if !ready
     begin
 
-      require_relative 'stty_console'
+      require_relative 'console/stty_console'
       ready = true
 
     rescue Exception
@@ -61,7 +61,7 @@ else
 
   # If still not ready, just use stubbed version
   if !ready
-    require_relative 'stub_console'
+    require_relative 'console/stub_console'
   end
 
 end
