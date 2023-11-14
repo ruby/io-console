@@ -52,8 +52,8 @@ class IO
     end
   end
 
-  def raw(*, **kwargs, &block)
-    ttymode_yield(block, **kwargs, &TTY_RAW)
+  def raw(*, min: 1, time: nil, intr: nil, &block)
+    ttymode_yield(block, min:, time:, intr:, &TTY_RAW)
   end
 
   def raw!(*)
