@@ -18,7 +18,7 @@ class IO
     end
   end
 
-  def raw(*)
+  def raw(*, min: 1, time: nil, intr: nil)
     saved = stty('-g')
     stty('raw')
     yield self
