@@ -25,13 +25,16 @@ class IO
     end
 
     if !con
-      begin
-        con = File.open('/dev/tty', 'r+')
-      rescue
-        return nil
+      if $stdin.isatty && $stdout.isatty
+        begin
+          con = File.open('/dev/tty', 'r+')
+        rescue
+          return nil
+        end
+
+        con.sync = true
       end
 
-      con.sync = true
       @console = con
     end
 
