@@ -43,20 +43,19 @@ jobs:
       run: bundle install
     - name: Run test
       run: rake # Attempting without 'bundle exec'
-    - name: Select the latest ruby release
-      id: latest
-      run: |
-        printenv versions | jq -r '[.[] | select(test("^[0-9]"))] | "version="+max' >> $GITHUB_OUTPUT
-      env:
-        versions: ${{needs.ruby-versions.outputs.versions}}
-      shell: sh
+      continue-on-error: ${{matrix.ruby == 'truffleruby-head'}}
     - id: build
       run: |
         rake build
-        echo "pkg=${GITHUB_REPOSITORY#*/}-${RUNNING_OS%-*}" >> $GITHUB_OUTPUT
+        echo "pkg=${GITHUB_REPOSITORY#*/}-${PLATFORM:-${RUNNING_OS%-*}}" >> $GITHUB_OUTPUT
       env:
         RUNNING_OS: ${{matrix.os}}
-      if: ${{matrix.ruby == steps.latest.outputs.version}}
+        PLATFORM: ${{ startsWith(matrix.ruby, 'jruby') && 'java' || '' }}
+      if: >-
+        ${{
+        github.event_name == 'push' &&
+        (matrix.ruby == needs.ruby-versions.outputs.latest || matrix.ruby == 'jruby-head')
+        }}
       shell: bash
     - name: Upload package
       uses: actions/upload-artifact@v3

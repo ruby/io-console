@@ -1,7 +1,7 @@
 require 'ffi'
 
-unless FFI::Platform::ARCH =~ /i386|x86_64|powerpc64|aarch64/
-  raise LoadError.new("native console only supported on i386, x86_64, powerpc64 and aarch64")
+unless FFI::Platform::ARCH =~ /i386|x86_64|powerpc64|aarch64|s390x/
+  raise LoadError.new("native console only supported on i386, x86_64, powerpc64, aarch64 and s390x")
 end
 
 module IO::LibC
