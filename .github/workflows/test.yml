@@ -51,7 +51,11 @@ jobs:
       env:
         RUNNING_OS: ${{matrix.os}}
         PLATFORM: ${{ startsWith(matrix.ruby, 'jruby') && 'java' || '' }}
-      if: ${{ matrix.ruby == needs.ruby-versions.outputs.latest || matrix.ruby == 'jruby-head' }}
+      if: >-
+        ${{
+        github.event_name == 'push' &&
+        (matrix.ruby == needs.ruby-versions.outputs.latest || matrix.ruby == 'jruby-head')
+        }}
       shell: bash
     - name: Upload package
       uses: actions/upload-artifact@v3
