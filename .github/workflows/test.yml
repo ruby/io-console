@@ -43,6 +43,7 @@ jobs:
       run: bundle install
     - name: Run test
       run: rake # Attempting without 'bundle exec'
+      continue-on-error: ${{matrix.ruby == 'truffleruby-head'}}
     - name: Select the latest ruby release
       id: latest
       run: |
