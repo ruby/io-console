@@ -42,3 +42,13 @@ task :default => :test
 task "build" => "build:java"
 
 task "build:java" => "date_epoch"
+
+task "coverage" do
+  cov = []
+  e = IO.popen([FileUtils::RUBY, "-S", "rdoc", "-C"], &:read)
+  e.scan(/^ *# in file (?<loc>.*)\n *(?<code>.*)|^ *(?<code>.*\S) *# in file (?<loc>.*)/) do
+    cov << "%s: %s\n" % $~.values_at(:loc, :code)
+  end
+  cov.sort!
+  puts cov
+end
