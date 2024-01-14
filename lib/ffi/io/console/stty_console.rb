@@ -10,10 +10,12 @@ warn "io/console on JRuby shells out to stty for most operations"
 class IO
   if RbConfig::CONFIG['host_os'].downcase =~ /linux/ && File.exists?("/proc/#{Process.pid}/fd")
     def stty(*args)
+      raise Errno::ENOTTY, inspect if !tty?
       `stty #{args.join(' ')} < /proc/#{Process.pid}/fd/#{fileno}`
     end
   else
     def stty(*args)
+      raise Errno::ENOTTY, inspect if !tty?
       `stty #{args.join(' ')}`
     end
   end
