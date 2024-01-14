@@ -1,5 +1,11 @@
 require 'ffi'
 
+tested_platforms = %w[i386 x86_64]
+
+if RbConfig::CONFIG['host_os'].downcase =~ /darwin/ && FFI::Platform::ARCH !~ /#{tested_platforms.join('|')}/
+  raise LoadError.new("native console on MacOS only supported on #{tested_platforms.join(', ')}")
+end
+
 module IO::LibC
   extend FFI::Library
   ffi_lib FFI::Library::LIBC
