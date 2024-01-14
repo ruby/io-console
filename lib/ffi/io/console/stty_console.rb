@@ -4,7 +4,7 @@ if $?.exitstatus != 0
   raise "stty command returned nonzero exit status"
 end
 
-warn "io/console on JRuby shells out to stty for most operations"
+warn "io/console on JRuby shells out to stty for most operations" if $VERBOSE
 
 # Non-Windows assumes stty command is available
 class IO
