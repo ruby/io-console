@@ -5,10 +5,6 @@ require "rdoc/task"
 name = "io/console"
 
 if RUBY_ENGINE == "ruby" || RUBY_ENGINE == "truffleruby"
-  require 'rake/extensiontask'
-  extask = Rake::ExtensionTask.new(name) do |x|
-    x.lib_dir.sub!(%r[(?=/|\z)], "/#{RUBY_VERSION}/#{x.platform}")
-  end
   task :test => :compile
 end
 
@@ -27,9 +23,7 @@ end
 task :build => ffi_version_file
 
 Rake::TestTask.new(:test) do |t|
-  if extask
-    t.libs = ["lib/#{RUBY_VERSION}/#{extask.platform}"]
-  end
+  t.libs.unshift(:extlibs)
   t.libs << "test/lib"
   t.ruby_opts << "-rhelper"
   t.options = "--ignore-name=TestIO_Console#test_bad_keyword" if RUBY_ENGINE == "jruby"
