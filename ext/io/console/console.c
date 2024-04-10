@@ -1814,6 +1814,57 @@ io_getpass(int argc, VALUE *argv, VALUE io)
 }
 
 /*
+ * call-seq:
+ *   io.ttyname       -> string or nil
+ *
+ * Returns name of associated terminal (tty) if +io+ is not a tty.
+ * Returns +nil+ otherwise.
+ */
+static VALUE
+console_ttyname(VALUE io)
+{
+    int fd = rb_io_descriptor(io);
+    if (!isatty(fd)) return Qnil;
+#if defined _WIN32
+    return rb_str_new2("con");
+#elif defined HAVE_TTYNAME_R
+    {
+	char termname[1024], *tn = termname;
+	size_t size = sizeof(termname);
+	int e;
+	if (ttyname_r(fd, tn, size) == 0)
+	    return rb_str_new2(tn);
+	if ((e = errno) == ERANGE) {
+	    VALUE s = rb_str_new(0, size);
+	    while (1) {
+		tn = RSTRING_PTR(s);
+		size = rb_str_capacity(s);
+		if (ttyname_r(fd, tn, size) == 0) {
+		    return rb_str_resize(s, strlen(tn));
+		}
+		if ((e = errno) != ERANGE) break;
+		if ((size *= 2) >= INT_MAX/2) break;
+		rb_str_resize(s, size);
+	    }
+	}
+	rb_syserr_fail_str(e, rb_sprintf("ttyname_r(%d)", fd));
+	UNREACHABLE_RETURN(Qnil);
+    }
+#elif defined HAVE_TTYNAME
+    {
+	const char *tn = ttyname(fd);
+	if (!tn) {
+	    int e = errno;
+	    rb_syserr_fail_str(e, rb_sprintf("ttyname(%d)", fd));
+	}
+	return rb_str_new_cstr(tn);
+    }
+#else
+# error No ttyname function
+#endif
+}
+
+/*
  * IO console methods
  */
 void
@@ -1880,6 +1931,7 @@ InitVM_console(void)
     rb_define_method(rb_cIO, "pressed?", console_key_pressed_p, 1);
     rb_define_method(rb_cIO, "check_winsize_changed", console_check_winsize_changed, 0);
     rb_define_method(rb_cIO, "getpass", console_getpass, -1);
+    rb_define_method(rb_cIO, "ttyname", console_ttyname, 0);
     rb_define_singleton_method(rb_cIO, "console", console_dev, -1);
     {
 	/* :stopdoc: */

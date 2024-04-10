@@ -47,6 +47,7 @@ when true
   elsif have_func("rb_scheduler_timeout") # 3.0
     have_func("rb_io_wait")
   end
+  have_func("ttyname_r") or have_func("ttyname")
   create_makefile("io/console") {|conf|
     conf << "\n""VK_HEADER = #{vk_header}\n"
   }
