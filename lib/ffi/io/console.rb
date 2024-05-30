@@ -52,9 +52,9 @@ else
       require_relative 'console/stty_console'
       ready = true
 
-    rescue Exception
+    rescue Exception => ex2
 
-      warn "failed to load stty console support: #{ex}" if $VERBOSE
+      warn "failed to load stty console support: #{ex2}" if $VERBOSE
       ready = false
 
     end
