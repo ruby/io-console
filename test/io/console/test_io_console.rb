@@ -37,7 +37,7 @@ class TestIO_Console < Test::Unit::TestCase
     trap(:TTOU, @old_ttou) if defined?(@old_ttou) and @old_ttou
   end
 
-  exceptions = %w[ENODEV ENOTTY EBADF ENXIO].map {|e|
+  exceptions = %w[ENODEV ENOTTY EBADF ENXIO EOPNOTSUPP].map {|e|
     Errno.const_get(e) if Errno.const_defined?(e)
   }
   exceptions.compact!
