@@ -38,18 +38,6 @@ jobs:
       - name: Publish to RubyGems
         uses: rubygems/release-gem@612653d273a73bdae1df8453e090060bb4db5f31 # v1
 
-      - name: Reset pkg working directory
-        run: rm -rf pkg/*.gem
-
-      - name: Build gem
-        run: bundle exec rake build:java
-
-      - name: Publish -java version to RubyGems
-        run: gem push pkg/io-console-*-java.gem
-
-      - name: Wait for release to propagate
-        run: gem exec rubygems-await pkg/*-java.gem
-
       - name: Create GitHub release
         run: |
           tag_name="$(git describe --tags --abbrev=0)"
