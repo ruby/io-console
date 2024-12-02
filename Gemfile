@@ -8,5 +8,5 @@ group :development do
   gem "rake"
   gem "test-unit"
   gem "test-unit-ruby-core"
-  gem 'rake-compiler'
+  gem "ruby-core-tasks", github: "ruby/ruby-core-tasks"
 end
