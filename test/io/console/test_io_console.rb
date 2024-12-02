@@ -622,14 +622,22 @@ end
 
 TestIO_Console.class_eval do
   def test_stringio_getch
-    assert_ruby_status %w"--disable=gems -rstringio -rio/console", %q{
-      abort unless StringIO.method_defined?(:getch)
+    require 'stringio'
+    env = {
+      "RUBYLIB" => [
+        $".grep(%r[/io/console\.[^./]+\z]) {$`},
+        $".grep(%r[/stringio\.[^./]+\z]) {$`},
+        *ENV["RUBYLIB"]
+      ].uniq.join(File::PATH_SEPARATOR)
     }
-    assert_ruby_status %w"--disable=gems -rio/console -rstringio", %q{
-      abort unless StringIO.method_defined?(:getch)
+    assert_ruby_status [env, *%w"--disable=gems -rstringio -rio/console"], %q{
+      exit StringIO.method_defined?(:getch)
     }
-    assert_ruby_status %w"--disable=gems -rstringio", %q{
-      abort if StringIO.method_defined?(:getch)
+    assert_ruby_status [env, *%w"--disable=gems -rio/console -rstringio"], %q{
+      exit StringIO.method_defined?(:getch)
+    }
+    assert_ruby_status [env, *%w"--disable=gems -rstringio"], %q{
+      exit !StringIO.method_defined?(:getch)
     }
   end
 end

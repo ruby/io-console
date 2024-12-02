@@ -4,6 +4,7 @@
 /pkg/
 /tmp/
 /logs/
+/.build/
 
 ChangeLog
 Gemfile.lock
