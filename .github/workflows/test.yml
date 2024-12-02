@@ -43,11 +43,11 @@ jobs:
     - name: Experiment with a manual bundle install
       run: bundle install
     - name: Run test
-      run: rake # Attempting without 'bundle exec'
+      run: bundle exec rake
       continue-on-error: ${{matrix.ruby == 'truffleruby-head'}}
     - id: build
       run: |
-        rake build
+        bundle exec rake build
         echo "pkg=${GITHUB_REPOSITORY#*/}-${PLATFORM:-${RUNNING_OS%-*}}" >> $GITHUB_OUTPUT
       env:
         RUNNING_OS: ${{matrix.os}}
