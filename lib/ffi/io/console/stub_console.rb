@@ -2,7 +2,7 @@ warn "io/console not supported; tty will not be manipulated" if $VERBOSE
 
 # Windows version is always stubbed for now
 class IO
-  def raw(*)
+  def raw(*, min: 1, time: nil, intr: nil)
     yield self
   end
 

@@ -5,18 +5,26 @@ on:
   pull_request:
   schedule:
     - cron: '25 10 * * *'
+  workflow_dispatch:
 
 jobs:
-  test:
+  ruby-versions:
     if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
+    uses: ruby/actions/.github/workflows/ruby_versions.yml@master
+    with:
+      engine: cruby
+      min_version: 2.6 # from `required_ruby_version` in io-console.gemspec
+
+  test:
+    needs: ruby-versions
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ 'head', '3.0', '2.7', '2.6' ]
+        ruby: ${{ fromJson(needs.ruby-versions.outputs.versions) }}
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         include:
+          - ruby: jruby
           - ruby: jruby-head
-          - ruby: jruby-9.3
           - ruby: truffleruby
           - ruby: truffleruby-head
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
@@ -26,25 +34,32 @@ jobs:
         git config --global core.autocrlf false
         git config --global core.eol lf
         git config --global advice.detachedHead 0
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Ruby ${{ matrix.ruby }}
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
+        rubygems: latest
     - name: Experiment with a manual bundle install
       run: bundle install
     - name: Run test
       run: rake # Attempting without 'bundle exec'
+      continue-on-error: ${{matrix.ruby == 'truffleruby-head'}}
     - id: build
       run: |
         rake build
-        echo "::set-output name=pkg::${GITHUB_REPOSITORY#*/}-${RUNNING_OS%-*}"
+        echo "pkg=${GITHUB_REPOSITORY#*/}-${PLATFORM:-${RUNNING_OS%-*}}" >> $GITHUB_OUTPUT
       env:
         RUNNING_OS: ${{matrix.os}}
-      if: "matrix.ruby == '3.0'"
+        PLATFORM: ${{ startsWith(matrix.ruby, 'jruby') && 'java' || '' }}
+      if: >-
+        ${{
+        github.event_name == 'push' &&
+        (matrix.ruby == needs.ruby-versions.outputs.latest || matrix.ruby == 'jruby-head')
+        }}
       shell: bash
     - name: Upload package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: pkg/*.gem
         name: ${{steps.build.outputs.pkg}}
