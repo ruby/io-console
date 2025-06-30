@@ -413,7 +413,7 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
       if cc = ctrl["intr"]
         assert_ctrl("#{cc.ord}", cc, r, w)
         assert_ctrl("#{cc.ord}", cc, r, w)
-        assert_ctrl("Interrupt", cc, r, w) unless /linux/ =~ RUBY_PLATFORM
+        assert_ctrl("Interrupt", cc, r, w) unless /linux/ =~ "#{RUBY_PLATFORM} #{RbConfig::CONFIG['host_os']}"
       end
       if cc = ctrl["dsusp"]
         assert_ctrl("#{cc.ord}", cc, r, w)
@@ -468,8 +468,6 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
   end
 
   def run_pty(src, n = 1)
-    pend("PTY.spawn cannot control terminal on JRuby") if RUBY_ENGINE == 'jruby'
-
     args = [TestIO_Console::INCLUDE_OPTS, "-rio/console", "-e", src]
     args.shift if args.first == "-I" # statically linked
     r, w, pid = PTY.spawn(EnvUtil.rubybin, *args)
