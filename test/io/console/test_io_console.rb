@@ -169,9 +169,9 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
   def test_noecho
     helper {|m, s|
       s.noecho {
-	assert_not_send([s, :echo?])
-	m.print "a"
-	sleep 0.1
+       assert_not_send([s, :echo?])
+       m.print "a"
+       sleep 0.1
       }
       m.print "b"
       assert_equal("b", m.readpartial(10))
@@ -364,6 +364,21 @@ defined?(PTY) and defined?(IO.console) and TestIO_Console.class_eval do
       assert_equal("\e[4C", r.gets.chomp)
       assert_equal("\e[2D", r.gets.chomp)
       assert_equal("\e[1A", r.gets.chomp)
+    end
+  end
+
+  def test_cursor_position_kqueue_regression
+    run_pty("#{<<~"begin;"}\n#{<<~'end;'}") do |r, w, _|
+      begin;
+        require "async"
+        require "io/console"
+
+        coords = Async { IO.console.cursor }.wait
+        p coords
+      end;
+      assert_equal("\e[6n", r.readpartial(5))
+      w.print("\e[12;34R"); w.flush
+      assert_equal([11, 33], eval(r.gets))
     end
   end
 
