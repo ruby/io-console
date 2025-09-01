@@ -6,6 +6,7 @@ gemspec
 group :development do
   gem "bundler"
   gem "rake"
+  gem "rdoc"
   gem "test-unit"
   gem "test-unit-ruby-core"
   gem "ruby-core-tasks", github: "ruby/ruby-core-tasks"
