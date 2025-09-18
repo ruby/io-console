@@ -41,6 +41,7 @@ end if ok
 case ok
 when true
   have_header("sys/ioctl.h") if hdr
+  have_header("sys/event.h")
   # rb_check_hash_type: 1.9.3
   # rb_io_get_write_io: 1.9.1
   # rb_cloexec_open: 2.0.0
