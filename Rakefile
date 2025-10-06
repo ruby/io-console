@@ -6,10 +6,14 @@ name = "io/console"
 
 gemspec = Bundler::GemHelper.instance.gemspec
 
-if RUBY_ENGINE == "ruby" || RUBY_ENGINE == "truffleruby"
+case RUBY_ENGINE
+when "ruby", "truffleruby"
   require "ruby-core/extensiontask"
   extask = RubyCore::ExtensionTask.new(gemspec)
   task :test => :compile
+  builtlibs = extask.libs
+when "jruby"
+  builtlibs = ["lib/ffi", "lib"]
 end
 
 ffi_version_file = "lib/ffi/#{name}/version.rb"
@@ -27,7 +31,7 @@ end
 task :build => ffi_version_file
 
 Rake::TestTask.new(:test) do |t|
-  t.libs.concat(extask.libs) if extask
+  t.libs.unshift(*builtlibs)
   t.libs << "test/lib"
   t.ruby_opts << "-rhelper"
   t.options = "--ignore-name=TestIO_Console#test_bad_keyword" if RUBY_ENGINE == "jruby"
