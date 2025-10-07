@@ -24,45 +24,51 @@ require 'rbconfig'
 require_relative 'console/version'
 require_relative 'console/common'
 
-# If Windows, always use the stub version
-if RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
-  require_relative 'console/stub_console'
-else
-
+case RbConfig::CONFIG['host_os']
+when /darwin|openbsd|freebsd|netbsd|linux/i
   # If Linux or BSD, try to load the native version
-  if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
-    begin
 
-      # Attempt to load the native Linux and BSD console logic
-      require_relative 'console/native_console'
-      ready = true
+  begin
 
-    rescue Exception => ex
+    # Attempt to load the native Linux and BSD console logic
+    require_relative 'console/native_console'
 
-      warn "failed to load native console support: #{ex}" if $VERBOSE
-      ready = false
+  rescue Exception => ex
 
-    end
+    warn "failed to load native console support: #{ex}" if $VERBOSE
+
+  else
+
+    # Native ready.
+    ready = true
+
   end
 
-  # Native failed, try to use stty
-  if !ready
-    begin
+when /mswin|win32|ming/i
+  # If Windows, stty is not possible, always use the stub version
 
-      require_relative 'console/stty_console'
-      ready = true
+  ready = false
 
-    rescue Exception => ex2
+end
 
-      warn "failed to load stty console support: #{ex2}" if $VERBOSE
-      ready = false
+if ready.nil?
+  # Native is not ready, try to use stty
 
-    end
+  begin
+
+    require_relative 'console/stty_console'
+    ready = true
+
+  rescue Exception => ex2
+
+    warn "failed to load stty console support: #{ex2}" if $VERBOSE
+    ready = false
+
   end
+end
 
+unless ready
   # If still not ready, just use stubbed version
-  if !ready
-    require_relative 'console/stub_console'
-  end
 
+  require_relative 'console/stub_console'
 end
