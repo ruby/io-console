@@ -44,6 +44,7 @@ jobs:
       run: bundle install
     - name: Run test
       run: rake # Attempting without 'bundle exec'
+      timeout-minutes: 3
     - id: build
       run: |
         rake build
