@@ -1878,6 +1878,8 @@ console_ttyname(VALUE io)
 # define console_ttyname rb_f_notimplement
 #endif
 
+static void InitVM_console(void);
+
 /*
  * IO console methods
  */
@@ -1907,10 +1909,10 @@ Init_console(void)
 #ifndef HAVE_RB_F_SEND
     id___send__ = rb_intern("__send__");
 #endif
-    InitVM(console);
+    InitVM_console();
 }
 
-void
+static void
 InitVM_console(void)
 {
     rb_define_method(rb_cIO, "raw", console_raw, -1);
