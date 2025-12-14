@@ -1,9 +1,9 @@
 class << (helper = Bundler::GemHelper.instance)
+  PATH = "ext/io/console/console.c"
   def update_gemspec
-    path = gemspec.loaded_from
-    File.open(path, "r+b") do |f|
+    File.open(PATH, "r+b") do |f|
       d = f.read
-      if d.sub!(/^(_VERSION\s*=\s*)".*"/) {$1 + gemspec.version.to_s.dump}
+      if d.sub!(/^(IO_CONSOLE_VERSION\s*=\s*)".*"/) {$1 + gemspec.version.to_s.dump}
         f.rewind
         f.truncate(0)
         f.print(d)
@@ -12,8 +12,7 @@ class << (helper = Bundler::GemHelper.instance)
   end
 
   def commit_bump
-    sh(%W[git commit -m bump\ up\ to\ #{gemspec.version}
-          #{gemspec.loaded_from}])
+    sh(%W[git commit -m bump\ up\ to\ #{gemspec.version} #{PATH}])
   end
 
   def version=(v)
