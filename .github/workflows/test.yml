@@ -26,7 +26,6 @@ jobs:
           - ruby: jruby
           - ruby: jruby-head
           - ruby: truffleruby
-          - ruby: truffleruby-head
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     steps:
     - name: git config
