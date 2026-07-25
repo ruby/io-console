@@ -8,7 +8,7 @@ warn "io/console on JRuby shells out to stty for most operations" if $VERBOSE
 
 # Non-Windows assumes stty command is available
 class IO
-  if RbConfig::CONFIG['host_os'].downcase =~ /linux/ && File.exists?("/proc/#{Process.pid}/fd")
+  if RbConfig::CONFIG['host_os'].downcase =~ /linux/ && File.exist?("/proc/#{Process.pid}/fd")
     protected def _io_console_stty(*args)
       _io_console_stty_error { `stty #{args.join(' ')} < /proc/#{Process.pid}/fd/#{fileno}` }
     end
