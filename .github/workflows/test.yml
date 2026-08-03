@@ -27,6 +27,8 @@ jobs:
             os: windows-latest
           - ruby: jruby-head
             os: macos-15-intel
+          - ruby: cygwin
+            os: windows-latest
         exclude:
           - ruby: jruby
             os: windows-latest
@@ -41,16 +43,35 @@ jobs:
         git config --global core.autocrlf false
         git config --global core.eol lf
         git config --global advice.detachedHead 0
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Set up Ruby ${{ matrix.ruby }}
-      uses: ruby/setup-ruby@v1
+      uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
       with:
         ruby-version: ${{ matrix.ruby }}
         rubygems: latest
+      if: ${{ matrix.ruby != 'cygwin' }}
+    - name: Set up Ruby Cygwin
+      id: cygwin-setup
+      uses: cygwin/cygwin-install-action@3f0a3f9f988f7e96b8c18098ae05eaec175f5b52 # v6.1
+      with:
+        packages: ruby gcc-core make libssl libyaml libffi zlib rubygems ruby-devel
+        site: |
+          https://cygwin.osuosl.org/
+      if: ${{ matrix.ruby == 'cygwin' }}
+    - name: cygwin ruby version
+      id: cygwin-ruby
+      run: |
+        where ruby bundle rake
+        ruby -v
+        ruby -S bundle -v
+        ruby -S rake --version
+        echo runner=ruby -S >> %GITHUB_OUTPUT%
+      if: ${{ steps.cygwin-setup.outcome == 'success' }}
+      shell: cmd
     - name: Experiment with a manual bundle install
-      run: bundle install
+      run: ${{ steps.cygwin-ruby.outputs.runner }}bundle install
     - name: Run test
-      run: rake # Attempting without 'bundle exec'
+      run: ${{ steps.cygwin-ruby.outputs.runner }}rake # Attempting without 'bundle exec'
       timeout-minutes: 3
     - id: build
       run: |
