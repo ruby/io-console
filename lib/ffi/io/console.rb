@@ -45,7 +45,8 @@ when /linux/
   libs << 'linux' << 'stty'
 when /mswin|win32|ming/i
   require_relative 'console/windows_constants'
-  # If Windows, stty is not possible, always use the stub version
+  require_relative 'console/windows_console'
+  return
 else
   libs << 'stty'
 end

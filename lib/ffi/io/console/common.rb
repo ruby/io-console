@@ -1,4 +1,6 @@
 # Methods common to all backend impls
+require 'io/wait'
+
 module IO::Console
 end
 
@@ -63,6 +65,20 @@ class IO
       puts($/)
     end
     str.chomp
+  end
+
+  def input_pending?
+    !wait_readable(0).nil?
+  end
+
+  def hide_cursor
+    write "\e[?25l"
+    self
+  end
+
+  def show_cursor
+    write "\e[?25h"
+    self
   end
 
   def cursor
