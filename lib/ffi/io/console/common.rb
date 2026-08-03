@@ -1,4 +1,7 @@
 # Methods common to all backend impls
+module IO::Console
+end
+
 class IO
   # TODO: Windows version uses "conin$" and "conout$" instead of /dev/tty
   def self.console(sym = nil, *args)
