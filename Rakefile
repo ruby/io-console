@@ -25,6 +25,7 @@ task ffi_version_file => "#{name.tr('/', '-')}.gemspec" do |t|
 end
 
 task :build => ffi_version_file
+task :test => ffi_version_file if RUBY_ENGINE == "jruby"
 
 Rake::TestTask.new(:test) do |t|
   if extask
