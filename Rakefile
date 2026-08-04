@@ -40,7 +40,7 @@ RDoc::Task.new
 
 task :default => :test
 
-task "build" => "build:java"
+task "build" => %w[rdoc:coverage build:java]
 
 task "build:java" => "date_epoch"
 
