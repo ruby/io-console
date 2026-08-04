@@ -1,13 +1,3 @@
-# Load appropriate native bits for BSD or Linux
-case RbConfig::CONFIG['host_os'].downcase
-when /darwin|openbsd|freebsd|netbsd/
-  require_relative 'bsd_console'
-when /linux/
-  require_relative 'linux_console'
-else
-  raise LoadError.new("no native io/console support")
-end
-
 # Common logic that uses native calls for console
 class IO
   def ttymode

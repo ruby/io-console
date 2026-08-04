@@ -67,7 +67,7 @@ class IO
       syswrite "\e[6n"
 
       return nil if getbyte != 0x1b
-      return nil if getbyte != ?[.ord
+      return nil if getbyte != "[".ord
 
       num = 0
       result = []
