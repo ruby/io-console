@@ -8,21 +8,26 @@ class IO
 
     if block_given?
       yield tmp = termios.dup
-      if LibC.tcsetattr(self.fileno, LibC::TCSANOW, tmp) != 0
-        raise SystemCallError.new(respond_to?(:path) ? path : "tcsetattr(TCSANOW)", FFI.errno)
-      end
+      ttymode_set(tmp)
     end
     termios
   end
   private :ttymode
+
+  def ttymode_set(termios)
+    if LibC.tcsetattr(self.fileno, LibC::TCSANOW, termios) != 0
+      raise SystemCallError.new(respond_to?(:path) ? path : "tcsetattr(TCSANOW)", FFI.errno)
+    end
+  end
+  private :ttymode_set
 
   def ttymode_yield(block, **opts, &setup)
     begin
       orig_termios = ttymode { |t| setup.call(t, **opts) }
       block.call(self)
     ensure
-      if orig_termios && LibC.tcsetattr(self.fileno, LibC::TCSANOW, orig_termios) != 0
-        raise SystemCallError.new(respond_to?(:path) ? path : "tcsetattr(TCSANOW)", FFI.errno)
+      if orig_termios
+        ttymode_set(orig_termios)
       end
     end
   end
@@ -81,6 +86,46 @@ class IO
 
   def noecho(&block)
     ttymode_yield(block) { |t| t[:c_lflag] &= ~(TTY_ECHO) }
+  end
+
+  class ConsoleMode
+    attr_reader :termios
+
+    def initialize(t)
+      @termios = t
+    end
+
+    def initialize_copy(m)
+      @termios = m.termios.dup
+    end
+
+    def echo=(echo)
+      if echo
+        @termios[:c_lflag] |= TTY_ECHO
+      else
+        @termios[:c_lflag] &= ~TTY_ECHO
+      end
+    end
+
+    def raw!(min: 1, time: nil, intr: nil)
+      TTY_RAW[@termios, min:, time:, intr:]
+      self
+    end
+
+    def raw(min: 1, time: nil, intr: nil)
+      new_mode = dup
+      TTY_RAW[new_mode.termios, min:, time:, intr:]
+      new_mode
+    end
+  end
+
+  def console_mode
+    ConsoleMode.new(ttymode)
+  end
+
+  def console_mode=(mode)
+    ttymode_set(mode.termios)
+    mode
   end
 
   def winsize

@@ -6,8 +6,6 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/ && FFI::Platform::ARCH !~ /#
   raise LoadError.new("native console on MacOS only supported on #{tested_platforms.join(', ')}")
 end
 
-require_relative 'native_console'
-
 module IO::LibC
   extend FFI::Library
   ffi_lib FFI::Library::LIBC
@@ -172,3 +170,5 @@ module IO::LibC
   attach_function :tcflush, [ :int, :int ], :int
   attach_function :ioctl, [ :int, :ulong, :varargs ], :int
 end
+
+require_relative 'native_console'
