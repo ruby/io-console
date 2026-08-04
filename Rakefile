@@ -30,6 +30,7 @@ Rake::TestTask.new(:test) do |t|
   if extask
     t.libs = [extask.lib_dir.chomp("/"+File.dirname(name))]
   end
+  t.libs.unshift "lib/ffi" if RUBY_ENGINE == "jruby"
   t.libs << "test/lib"
   t.ruby_opts << "-rhelper"
   t.options = "--ignore-name=TestIO_Console#test_bad_keyword" if RUBY_ENGINE == "jruby"
