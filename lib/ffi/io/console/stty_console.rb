@@ -1,6 +1,10 @@
 # attempt to call stty; if failure, raise error
-`stty 2> /dev/null`
-if $?.exitstatus != 0
+module IO::Console
+  STTY = %w[/usr/bin/stty /bin/stty].find {|path| File.executable?(path)}
+end
+
+unless IO::Console::STTY &&
+       system(IO::Console::STTY, out: File::NULL, err: %i[child out])
   raise "stty command returned nonzero exit status"
 end
 
@@ -8,46 +12,43 @@ warn "io/console on JRuby shells out to stty for most operations" if $VERBOSE
 
 # Non-Windows assumes stty command is available
 class IO
-  if RbConfig::CONFIG['host_os'].downcase =~ /linux/ && File.exist?("/proc/#{Process.pid}/fd")
-    protected def _io_console_stty(*args)
-      _io_console_stty_error { `stty #{args.join(' ')} < /proc/#{Process.pid}/fd/#{fileno}` }
-    end
-  else
-    protected def _io_console_stty(*args)
-      _io_console_stty_error { `stty #{args.join(' ')}` }
-    end
-  end
-
-  protected def _io_console_stty_error
+  private def _io_console_stty(*args)
     # pre-check to catch non-tty filenos we can't stty against anyway
     raise Errno::ENOTTY, inspect if !tty?
 
-    result = yield
-
-    case result
-    when /Inappropriate ioctl for device/
-      raise Errno.ENOTTY, inspect
+    IO.pipe do |re, we|
+      IO.popen([Console::STTY, *args, in: fileno, err: we], &:read)
+    ensure
+      unless $?.success?
+        we.close
+        error = re.read
+        case error
+        when /Inappropriate ioctl for device/
+          raise Errno::ENOTTY, inspect
+        end
+        raise "stty command failed: #{error.chomp}"
+      end
     end
-
-    result
   end
 
   def raw(*, min: 1, time: nil, intr: nil)
-    saved = _io_console_stty('-g raw')
+    saved = _io_console_stty('-g')
+    _io_console_stty('raw')
     yield self
   ensure
-    _io_console_stty(saved)
+    _io_console_stty(saved) if saved
   end
 
   def raw!(*)
-    stty('raw')
+    _io_console_stty('raw')
   end
 
   def cooked(*)
-    saved = _io_console_stty('-g', '-raw')
+    saved = _io_console_stty('-g')
+    _io_console_stty('-raw')
     yield self
   ensure
-    _io_console_stty(saved)
+    _io_console_stty(saved) if saved
   end
 
   def cooked!(*)
@@ -63,10 +64,11 @@ class IO
   end
 
   def noecho
-    saved = _io_console_stty('-g', '-echo')
+    saved = _io_console_stty('-g')
+    _io_console_stty('-echo')
     yield self
   ensure
-    _io_console_stty(saved)
+    _io_console_stty(saved) if saved
   end
 
   # Not all systems return same format of stty -a output
