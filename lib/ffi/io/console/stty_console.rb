@@ -74,7 +74,7 @@ class IO
   UBUNTU = 'rows (?<rows>\d+); columns (?<columns>\d+)'
 
   def winsize
-    match = _io_console_stty('-a').match(/#{IEEE_STD_1003_2}|#{UBUNTU}/)
+    match = _io_console_stty('-a').match(/#{IEEE_STD_1003_2}|#{UBUNTU}/o)
     [match[:rows].to_i, match[:columns].to_i]
   end
 
