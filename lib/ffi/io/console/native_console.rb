@@ -1,5 +1,5 @@
 # Common logic that uses native calls for console
-class IO
+module IO::Console
   def ttymode
     termios = LibC::Termios.new
     if LibC.tcgetattr(self.fileno, termios) != 0
@@ -88,7 +88,7 @@ class IO
     ttymode_yield(block) { |t| t[:c_lflag] &= ~(TTY_ECHO) }
   end
 
-  class ConsoleMode
+  class Mode
     attr_reader :termios
 
     def initialize(t)
@@ -120,7 +120,7 @@ class IO
   end
 
   def console_mode
-    ConsoleMode.new(ttymode)
+    Mode.new(ttymode)
   end
 
   def console_mode=(mode)
@@ -172,4 +172,8 @@ class IO
   def ioflush
     raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCIOFLUSH) == 0
   end
+end
+
+class IO
+  include Console
 end

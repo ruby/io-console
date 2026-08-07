@@ -15,8 +15,10 @@ end
 ffi_version_file = "lib/ffi/#{name}/version.rb"
 task ffi_version_file => "#{name.tr('/', '-')}.gemspec" do |t|
   version = <<~RUBY
-    class IO::ConsoleMode
-      VERSION = "#{Bundler::GemHelper.instance.gemspec.version}"
+    class IO
+      module Console
+        VERSION = "#{Bundler::GemHelper.instance.gemspec.version}"
+      end
     end
   RUBY
   unless (File.read(t.name) rescue nil) == version

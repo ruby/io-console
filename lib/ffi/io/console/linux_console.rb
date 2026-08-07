@@ -6,7 +6,7 @@ unless FFI::Platform::ARCH =~ /#{tested_platforms.join('|')}/
   warn "native console only tested on #{tested_platforms.join(', ')}"
 end
 
-module IO::LibC
+module IO::Console::LibC
   extend FFI::Library
   ffi_lib FFI::Library::LIBC
 

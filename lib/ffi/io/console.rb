@@ -24,6 +24,18 @@ require 'rbconfig'
 require_relative 'console/version'
 require_relative 'console/common'
 
+class IO
+  module Console
+    class Mode
+      VERSION = Console::VERSION
+      deprecate_constant :VERSION
+    end
+  end
+
+  ConsoleMode = Console::Mode
+  deprecate_constant :ConsoleMode
+end
+
 libs = []
 # If Linux or BSD, try to load the native version
 case RbConfig::CONFIG['host_os'].downcase
