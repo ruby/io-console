@@ -50,10 +50,11 @@ task "build:java" => "date_epoch"
 
 task "coverage" do
   cov = []
-  e = IO.popen([FileUtils::RUBY, "-S", "rdoc", "-C"], &:read)
-  e.scan(/^ *# in file (?<loc>.*)\n *(?<code>.*)|^ *(?<code>.*\S) *# in file (?<loc>.*)/) do
+  e = IO.popen([FileUtils::RUBY, "-S", "rdoc", "-C", "--all"], &:read)
+  e.scan(/^ *(?:# in file (?<loc>.*)\n *(?<code>.*)|(?<code>.*\S) *# in file (?<loc>.*)|(?<code>\S+) (?<loc>\S+:\d+))/) do
     cov << "%s: %s\n" % $~.values_at(:loc, :code)
   end
   cov.sort!
   puts cov
+  raise "RDoc incomplete" unless $?.success?
 end
