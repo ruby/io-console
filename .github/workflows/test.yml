@@ -23,6 +23,8 @@ jobs:
         ruby: ${{ fromJson(needs.ruby-versions.outputs.versions) }}
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         include:
+          - ruby: mswin
+            os: windows-latest
           - ruby: jruby
           - ruby: jruby-head
           - ruby: truffleruby
