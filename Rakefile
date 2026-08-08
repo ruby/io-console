@@ -48,6 +48,14 @@ task "build" => %w[rdoc:coverage build:java]
 
 task "build:java" => "date_epoch"
 
+# Keep RDoc::Task's coverage check from exiting the Rake process.
+coverage_task = Rake::Task["rdoc:coverage"].actions.shift
+task "rdoc:coverage" do |*t|
+  coverage_task.call(*t)
+rescue SystemExit => exit
+  raise "RDoc incomplete" unless exit.success?
+end
+
 task "coverage" do
   cov = []
   e = IO.popen([FileUtils::RUBY, "-S", "rdoc", "-C", "--all"], &:read)
