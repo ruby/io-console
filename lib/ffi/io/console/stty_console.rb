@@ -17,8 +17,10 @@ class IO
     raise Errno::ENOTTY, inspect if !tty?
 
     IO.pipe do |re, we|
-      IO.popen([Console::STTY, *args, in: fileno, err: we], &:read)
+      input = dup # workaround for JRuby
+      IO.popen([Console::STTY, *args, in: input, err: we], &:read)
     ensure
+      input&.close
       unless $?.success?
         we.close
         error = re.read
