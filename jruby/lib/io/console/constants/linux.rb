@@ -202,5 +202,3 @@ module IO::Console::LibC
   attach_function :tcflush, [ :int, :int ], :int
   attach_function :ioctl, [ :int, :ulong, :varargs ], :int
 end
-
-require_relative 'native_console'

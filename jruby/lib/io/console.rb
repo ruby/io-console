@@ -36,28 +36,29 @@ class IO
   deprecate_constant :ConsoleMode
 end
 
-libs = []
+backends = []
 # If Linux or BSD, try to load the native version
 case RbConfig::CONFIG['host_os'].downcase
 when /darwin|openbsd|freebsd|netbsd/
-  libs << 'bsd' << 'stty'
+  backends << %w[ffi bsd] << %w[stty]
 when /linux/
-  libs << 'linux' << 'stty'
+  backends << %w[ffi linux] << %w[stty]
 when /mswin|win32|ming/i
-  require_relative 'console/windows_constants'
-  require_relative 'console/windows_console'
+  require_relative 'console/constants/windows'
+  require_relative 'console/backend/windows'
   return
 else
-  libs << 'stty'
+  backends << %w[stty]
 end
 
-return if libs.any? do |lib|
-  require_relative "console/#{lib}_console"
+return if backends.any? do |backend, constants|
+  require_relative "console/constants/#{constants}" if constants
+  require_relative "console/backend/#{backend}"
 rescue Exception => ex
-  warn "failed to load #{lib} console support: #{ex}" if $VERBOSE
+  warn "failed to load #{backend} console support: #{ex}" if $VERBOSE
 else
   true
 end
 
 # If still not ready, just use stubbed version
-require_relative "console/stub_console"
+require_relative 'console/backend/stub'
