@@ -12,7 +12,7 @@ jobs:
     if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
     uses: ruby/actions/.github/workflows/ruby_versions.yml@master
     with:
-      engine: cruby
+      engine: all
       min_version: 2.6 # from `required_ruby_version` in io-console.gemspec
 
   test:
@@ -25,9 +25,15 @@ jobs:
         include:
           - ruby: mswin
             os: windows-latest
-          - ruby: jruby
           - ruby: jruby-head
+            os: macos-15-intel
+        exclude:
+          - ruby: jruby
+            os: windows-latest
+          - ruby: jruby-head
+            os: windows-latest
           - ruby: truffleruby
+            os: windows-latest
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     steps:
     - name: git config
