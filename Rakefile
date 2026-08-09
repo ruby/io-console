@@ -12,8 +12,8 @@ if RUBY_ENGINE == "ruby" || RUBY_ENGINE == "truffleruby"
   task :test => :compile
 end
 
-ffi_version_file = "lib/ffi/#{name}/version.rb"
-task ffi_version_file => "#{name.tr('/', '-')}.gemspec" do |t|
+jruby_version_file = "jruby/lib/#{name}/version.rb"
+task jruby_version_file => "#{name.tr('/', '-')}.gemspec" do |t|
   version = <<~RUBY
     class IO
       module Console
@@ -26,14 +26,14 @@ task ffi_version_file => "#{name.tr('/', '-')}.gemspec" do |t|
   end
 end
 
-task :build => ffi_version_file
-task :test => ffi_version_file if RUBY_ENGINE == "jruby"
+task :build => jruby_version_file
+task :test => jruby_version_file if RUBY_ENGINE == "jruby"
 
 Rake::TestTask.new(:test) do |t|
   if extask
     t.libs = [extask.lib_dir.chomp("/"+File.dirname(name))]
   elsif RUBY_ENGINE == "jruby"
-    t.libs.unshift "lib/ffi"
+    t.libs.unshift "jruby/lib"
   end
   t.libs << "test/lib"
   t.ruby_opts << "-rhelper"

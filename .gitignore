@@ -11,4 +11,4 @@ Gemfile.lock
 *.bundle
 *.dll
 *.so
-lib/ffi/io/console/version.rb
+jruby/lib/io/console/version.rb
