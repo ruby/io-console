@@ -1,3 +1,62 @@
+require 'ffi'
+
+case RbConfig::CONFIG['host_os']
+when /darwin/i
+  tested_platforms = /i386|x86_64/
+  unless tested_platforms.match?(FFI::Platform::ARCH)
+    raise LoadError, "native console on MacOS only supported on #{tested_platforms.source.gsub('|', ', ')}"
+  end
+when /linux/i
+  tested_platforms = /i386|x86_64|powerpc64|aarch64|s390x/
+  unless tested_platforms.match?(FFI::Platform::ARCH)
+    warn "native console only tested on #{tested_platforms.source.gsub('|', ', ')}"
+  end
+end
+
+module IO::Console::LibC
+  include IO::Console::Constants
+  extend FFI::Library
+  ffi_lib FFI::Library::LIBC
+
+  typedef TCFLAG_TYPE, :tcflag_t
+  typedef SPEED_TYPE, :speed_t
+
+  class Termios < FFI::Struct
+    constants = IO::Console::Constants
+    fields = [
+      :c_iflag, :tcflag_t,
+      :c_oflag, :tcflag_t,
+      :c_cflag, :tcflag_t,
+      :c_lflag, :tcflag_t,
+    ]
+    fields.concat([:c_line, :uchar]) if constants::TERMIOS_HAS_LINE
+    fields.concat([
+      :c_cc, [:uchar, constants::NCCS],
+      :c_ispeed, :speed_t,
+      :c_ospeed, :speed_t,
+    ])
+    layout(*fields)
+  end
+
+  class Winsize < FFI::Struct
+    layout \
+      :ws_row, :ushort,
+      :ws_col, :ushort,
+      :ws_xpixel, :ushort,
+      :ws_ypixel, :ushort
+  end
+
+  attach_function :tcsetattr, [:int, :int, Termios], :int
+  attach_function :tcgetattr, [:int, Termios], :int
+  attach_function :cfgetispeed, [Termios], :speed_t
+  attach_function :cfgetospeed, [Termios], :speed_t
+  attach_function :cfsetispeed, [Termios, :speed_t], :int
+  attach_function :cfsetospeed, [Termios, :speed_t], :int
+  attach_function :cfmakeraw, [Termios], :int
+  attach_function :tcflush, [:int, :int], :int
+  attach_function :ioctl, [:int, :ulong, :varargs], :int
+end
+
 # Common logic that uses native calls for console
 module IO::Console
   def ttymode

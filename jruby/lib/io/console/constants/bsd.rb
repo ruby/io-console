@@ -1,22 +1,12 @@
-require 'ffi'
-
-tested_platforms = %w[i386 x86_64]
-
-if RbConfig::CONFIG['host_os'].downcase =~ /darwin/ && FFI::Platform::ARCH !~ /#{tested_platforms.join('|')}/
-  raise LoadError.new("native console on MacOS only supported on #{tested_platforms.join(', ')}")
-end
-
-module IO::Console::LibC
-  extend FFI::Library
-  ffi_lib FFI::Library::LIBC
-
-  if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
-    typedef :ulong, :tcflag_t
-    typedef :ulong, :speed_t
+module IO::Console::Constants
+  if /darwin/i.match?(RbConfig::CONFIG['host_os'])
+    TCFLAG_TYPE = :ulong
+    SPEED_TYPE = :ulong
   else
-    typedef :uint, :tcflag_t
-    typedef :uint, :speed_t
+    TCFLAG_TYPE = :uint
+    SPEED_TYPE = :uint
   end
+  TERMIOS_HAS_LINE = false
 
   # Special Control Characters
   VEOF     = 0 #  ICANON
@@ -124,49 +114,6 @@ module IO::Console::LibC
   IOCPARM_MASK = 0x1fff
   IOC_OUT = 0x40000000
   IOC_IN  = 0x80000000
-
-  def self._IOC(inout,group,num,len)
-    inout | ((len & IOCPARM_MASK) << 16) | ((group.ord << 8) | num)
-  end
-
-  def self._IOR(g,n,t)
-    self._IOC(IOC_OUT, g, n, find_type(t).size)
-  end
-
-  def self._IOW(g,n,t)
-    self._IOC(IOC_IN, g, n, find_type(t).size)
-  end
-
-
-  class Termios < FFI::Struct
-    layout \
-      :c_iflag, :tcflag_t,
-      :c_oflag, :tcflag_t,
-      :c_cflag, :tcflag_t,
-      :c_lflag, :tcflag_t,
-      :c_cc, [ :uchar, NCCS ],
-      :c_ispeed, :speed_t,
-      :c_ospeed, :speed_t
-  end
-
-  class Winsize < FFI::Struct
-    layout \
-      :ws_row, :ushort,
-      :ws_col, :ushort,
-      :ws_xpixel, :ushort,
-      :ws_ypixel, :ushort
-  end
-
-  TIOCGWINSZ = _IOR('t', 104, Winsize)  # get window size
-  TIOCSWINSZ = _IOW('t', 103, Winsize)  # set window size
-
-  attach_function :tcsetattr, [ :int, :int, Termios ], :int
-  attach_function :tcgetattr, [ :int, Termios ], :int
-  attach_function :cfgetispeed, [ Termios ], :speed_t
-  attach_function :cfgetospeed, [ Termios ], :speed_t
-  attach_function :cfsetispeed, [ Termios, :speed_t ], :int
-  attach_function :cfsetospeed, [ Termios, :speed_t ], :int
-  attach_function :cfmakeraw, [ Termios ], :int
-  attach_function :tcflush, [ :int, :int ], :int
-  attach_function :ioctl, [ :int, :ulong, :varargs ], :int
+  TIOCGWINSZ = 0x40087468
+  TIOCSWINSZ = 0x80087467
 end

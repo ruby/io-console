@@ -1,17 +1,7 @@
-require 'ffi'
-
-tested_platforms = %w[i386 x86_64 powerpc64 aarch64 s390x]
-
-unless FFI::Platform::ARCH =~ /#{tested_platforms.join('|')}/
-  warn "native console only tested on #{tested_platforms.join(', ')}"
-end
-
-module IO::Console::LibC
-  extend FFI::Library
-  ffi_lib FFI::Library::LIBC
-
-  typedef :uint, :tcflag_t
-  typedef :uint, :speed_t
+module IO::Console::Constants
+  TCFLAG_TYPE = :uint
+  SPEED_TYPE = :uint
+  TERMIOS_HAS_LINE = true
 
   VINTR = 0
   VQUIT = 1
@@ -168,37 +158,6 @@ module IO::Console::LibC
   TCSADRAIN = 1
   TCSAFLUSH = 2
   NCCS = 32
-  class Termios < FFI::Struct
-    layout \
-      :c_iflag, :tcflag_t,
-      :c_oflag, :tcflag_t,
-      :c_cflag, :tcflag_t,
-      :c_lflag, :tcflag_t,
-      :c_line, :uchar,
-      :c_cc, [ :uchar, NCCS ],
-      :c_ispeed, :speed_t,
-      :c_ospeed, :speed_t
-  end
-
-  class Winsize < FFI::Struct
-    layout \
-      :ws_row, :ushort,
-      :ws_col, :ushort,
-      :ws_xpixel, :ushort,
-      :ws_ypixel, :ushort
-  end
-
-
   TIOCGWINSZ = 0x5413
   TIOCSWINSZ = 0x5414
-
-  attach_function :tcsetattr, [ :int, :int, Termios ], :int
-  attach_function :tcgetattr, [ :int, Termios ], :int
-  attach_function :cfgetispeed, [ Termios ], :speed_t
-  attach_function :cfgetospeed, [ Termios ], :speed_t
-  attach_function :cfsetispeed, [ Termios, :speed_t ], :int
-  attach_function :cfsetospeed, [ Termios, :speed_t ], :int
-  attach_function :cfmakeraw, [ Termios ], :int
-  attach_function :tcflush, [ :int, :int ], :int
-  attach_function :ioctl, [ :int, :ulong, :varargs ], :int
 end

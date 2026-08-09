@@ -1,13 +1,6 @@
 require 'ffi'
 
 module IO::Console::Windows
-  STD_INPUT_HANDLE = -10
-  STD_OUTPUT_HANDLE = -11
-  WAIT_OBJECT_0 = 0
-  WAIT_TIMEOUT = 258
-  ENABLE_WRAP_AT_EOL_OUTPUT = 2
-  ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4
-
   module Native
     extend FFI::Library
     ffi_convention :stdcall

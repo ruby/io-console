@@ -38,14 +38,14 @@ end
 
 backends = []
 # If Linux or BSD, try to load the native version
-case RbConfig::CONFIG['host_os'].downcase
-when /darwin|openbsd|freebsd|netbsd/
-  backends << %w[ffi bsd] << %w[stty]
-when /linux/
-  backends << %w[ffi linux] << %w[stty]
+case RbConfig::CONFIG['host_os']
+when /darwin|openbsd|freebsd|netbsd/i
+  backends << %w[ffi/termios bsd] << %w[stty]
+when /linux/i
+  backends << %w[ffi/termios linux] << %w[stty]
 when /mswin|win32|ming/i
   require_relative 'console/constants/windows'
-  require_relative 'console/backend/windows'
+  require_relative 'console/backend/ffi/windows'
   return
 else
   backends << %w[stty]
@@ -55,7 +55,7 @@ return if backends.any? do |backend, constants|
   require_relative "console/constants/#{constants}" if constants
   require_relative "console/backend/#{backend}"
 rescue Exception => ex
-  warn "failed to load #{backend} console support: #{ex}" if $VERBOSE
+  warn "failed to load #{backend.split('/', 2).first} console support: #{ex}" if $VERBOSE
 else
   true
 end
