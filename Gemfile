@@ -6,7 +6,7 @@ gemspec
 group :development do
   gem "bundler"
   gem "rake"
-  gem "rdoc"
+  gem "rdoc" unless /cygwin/ =~ RUBY_PLATFORM
 
   # rdoc 8 depends on rbs, which has no java platform gem before 4.1.0.pre.2.
   # See https://github.com/ruby/rdoc/issues/1746
