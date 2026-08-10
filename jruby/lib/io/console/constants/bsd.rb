@@ -2,6 +2,8 @@ module IO::Console::Constants
   if /darwin/i.match?(RbConfig::CONFIG['host_os'])
     TCFLAG_TYPE = :ulong
     SPEED_TYPE = :ulong
+    TIOCGETA = 0x40487413
+    TIOCSETA = 0x80487414
   else
     TCFLAG_TYPE = :uint
     SPEED_TYPE = :uint

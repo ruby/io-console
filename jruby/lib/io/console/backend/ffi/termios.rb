@@ -2,7 +2,7 @@ require 'ffi'
 
 case RbConfig::CONFIG['host_os']
 when /darwin/i
-  tested_platforms = /i386|x86_64/
+  tested_platforms = /i386|x86_64|aarch64/
   unless tested_platforms.match?(FFI::Platform::ARCH)
     raise LoadError, "native console on MacOS only supported on #{tested_platforms.source.gsub('|', ', ')}"
   end
@@ -46,13 +46,13 @@ module IO::Console::LibC
       :ws_ypixel, :ushort
   end
 
-  attach_function :tcsetattr, [:int, :int, Termios], :int
-  attach_function :tcgetattr, [:int, Termios], :int
-  attach_function :cfgetispeed, [Termios], :speed_t
-  attach_function :cfgetospeed, [Termios], :speed_t
-  attach_function :cfsetispeed, [Termios, :speed_t], :int
-  attach_function :cfsetospeed, [Termios, :speed_t], :int
-  attach_function :cfmakeraw, [Termios], :int
+  attach_function :tcsetattr, [:int, :int, :pointer], :int
+  attach_function :tcgetattr, [:int, :pointer], :int
+  attach_function :cfgetispeed, [:pointer], :speed_t
+  attach_function :cfgetospeed, [:pointer], :speed_t
+  attach_function :cfsetispeed, [:pointer, :speed_t], :int
+  attach_function :cfsetospeed, [:pointer, :speed_t], :int
+  attach_function :cfmakeraw, [:pointer], :void
   attach_function :tcflush, [:int, :int], :int
   attach_function :ioctl, [:int, :ulong, :varargs], :int
 end
@@ -61,7 +61,12 @@ end
 module IO::Console
   def ttymode
     termios = LibC::Termios.new
-    if LibC.tcgetattr(self.fileno, termios) != 0
+    result = if LibC.const_defined?(:TIOCGETA)
+      LibC.ioctl(fileno, LibC::TIOCGETA, :pointer, termios.pointer)
+    else
+      LibC.tcgetattr(fileno, termios.pointer)
+    end
+    if result != 0
       raise SystemCallError.new(respond_to?(:path) ? path : "tcgetattr", FFI.errno)
     end
 
@@ -74,7 +79,12 @@ module IO::Console
   private :ttymode
 
   def ttymode_set(termios)
-    if LibC.tcsetattr(self.fileno, LibC::TCSANOW, termios) != 0
+    result = if LibC.const_defined?(:TIOCSETA)
+      LibC.ioctl(fileno, LibC::TIOCSETA, :pointer, termios.pointer)
+    else
+      LibC.tcsetattr(fileno, LibC::TCSANOW, termios.pointer)
+    end
+    if result != 0
       raise SystemCallError.new(respond_to?(:path) ? path : "tcsetattr(TCSANOW)", FFI.errno)
     end
   end
@@ -93,7 +103,7 @@ module IO::Console
   private :ttymode_yield
 
   TTY_RAW = Proc.new do |t, min: 1, time: nil, intr: nil|
-    LibC.cfmakeraw(t)
+    LibC.cfmakeraw(t.pointer)
     t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
     if min >= 0
       t[:c_cc][LibC::VMIN] = min
