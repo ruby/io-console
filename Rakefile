@@ -32,8 +32,9 @@ task :test => ffi_version_file if RUBY_ENGINE == "jruby"
 Rake::TestTask.new(:test) do |t|
   if extask
     t.libs = [extask.lib_dir.chomp("/"+File.dirname(name))]
+  elsif RUBY_ENGINE == "jruby"
+    t.libs.unshift "lib/ffi"
   end
-  t.libs.unshift "lib/ffi" if RUBY_ENGINE == "jruby"
   t.libs << "test/lib"
   t.ruby_opts << "-rhelper"
   t.test_files = FileList["test/**/test_*.rb"]
