@@ -48,6 +48,9 @@ task "build" => %w[rdoc:coverage build:java]
 
 task "build:java" => "date_epoch"
 
+# For old the RDoc included with Ruby 2.6, which doesn't define this task.
+task "rdoc:coverage"
+
 # Keep RDoc::Task's coverage check from exiting the Rake process.
 coverage_task = Rake::Task["rdoc:coverage"].actions.shift
 task "rdoc:coverage" do |*t|
