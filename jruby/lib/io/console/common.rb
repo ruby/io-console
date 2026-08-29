@@ -64,7 +64,7 @@ class IO
     ensure
       puts($/)
     end
-    str.chomp
+    str&.chomp
   end
 
   def input_pending?
@@ -162,7 +162,7 @@ class IO
 
     def getpass(prompt = nil)
       write(prompt) if prompt
-      str = gets.chomp
+      str = gets&.chomp
       puts($/)
       str
     end
