@@ -43,6 +43,7 @@ class IO
       @console = con
     end
 
+    return nil unless con
     return con.send(sym, *args) if sym
     return con
   end
