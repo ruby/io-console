@@ -1,7 +1,7 @@
 helper = Bundler::GemHelper.instance
 
 java_pkg = nil
-task 'build:java' => 'date_epoch' do |t|
+task 'build:java' => ['jruby/lib/io/console/version.rb', 'date_epoch'] do |t|
   java_pkg = helper.build_java_gem
 end
 
