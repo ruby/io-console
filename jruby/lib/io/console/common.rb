@@ -108,6 +108,7 @@ class IO
         end
       end
 
+      return nil unless b && result.length == 2
       result.map(&:pred)
     end
   end
