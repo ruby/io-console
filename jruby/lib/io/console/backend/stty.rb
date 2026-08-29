@@ -30,7 +30,7 @@ class IO::Console::Mode
 
   def raw!(min: 1, time: nil, intr: nil)
     @args << 'raw'
-    @args.push('min', min.to_s) if min >= 0
+    @args.push('min', min.to_s) if min && min >= 0
     @args.push('time', ((time || 0) * 10).to_i.to_s)
     @args.concat(%w[brkint isig opost]) if intr
     self
@@ -72,8 +72,9 @@ class IO
     self.console_mode = saved if saved
   end
 
-  def raw!(*)
-    _io_console_stty('raw')
+  def raw!(*, min: 1, time: nil, intr: nil)
+    self.console_mode = console_mode.raw(min:, time:, intr:)
+    self
   end
 
   def cooked(*)
