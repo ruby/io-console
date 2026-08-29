@@ -105,10 +105,10 @@ module IO::Console
   TTY_RAW = Proc.new do |t, min: 1, time: nil, intr: nil|
     LibC.cfmakeraw(t.pointer)
     t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
-    if min >= 0
+    if min && min >= 0
       t[:c_cc][LibC::VMIN] = min
     end
-    t[:c_cc][LibC::VTIME] = (time&.to_i || 0) * 10
+    t[:c_cc][LibC::VTIME] = ((time || 0) * 10).to_i
     if intr
       t[:c_iflag] |= LibC::BRKINT
       t[:c_lflag] |= LibC::ISIG
@@ -120,8 +120,9 @@ module IO::Console
     ttymode_yield(block, min:, time:, intr:, &TTY_RAW)
   end
 
-  def raw!(*)
-    ttymode(&TTY_RAW)
+  def raw!(*, min: 1, time: nil, intr: nil)
+    ttymode { |t| TTY_RAW.call(t, min:, time:, intr:) }
+    self
   end
 
   TTY_COOKED = Proc.new do |t|
