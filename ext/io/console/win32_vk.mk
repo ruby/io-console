@@ -1,11 +1,9 @@
 win32_vk.inc: win32_vk.list $(srcdir)/extract-vk.rb
 
 .list.inc:
-	( \
-	$(RUBY) $(srcdir)/extract-vk.rb $< && \
-	gperf --ignore-case -L ANSI-C -E -C -P -p -j1 -i 1 -g -o -t -K ofs -N console_win32_vk -k* $< \
-	| sed -f $(top_srcdir)/tool/gperf.sed \
-	) > $(@F)
+	$(Q)$(RUBY) $(srcdir)/extract-vk.rb $< \
+	    --ignore-case -L ANSI-C -E -C -P -p -j1 -i 1 -g -o -t -K ofs -N console_win32_vk -k* \
+	    > $(@F)
 
 .SUFFIXES: .chksum .list .inc
 
