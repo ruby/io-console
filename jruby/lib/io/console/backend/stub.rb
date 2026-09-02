@@ -27,6 +27,18 @@ class IO
     yield self
   end
 
+  def min
+  end
+
+  def min=(n)
+  end
+
+  def time
+  end
+
+  def time=(t)
+  end
+
   def winsize
     [25, 80]
   end

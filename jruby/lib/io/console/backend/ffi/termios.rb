@@ -102,13 +102,19 @@ module IO::Console
   end
   private :ttymode_yield
 
-  TTY_RAW = Proc.new do |t, min: 1, time: nil, intr: nil|
+  TTY_SET_MIN = Proc.new do |t, min|
+    t[:c_cc][LibC::VMIN] = min ? min.to_i.clamp(0, 255) : 1
+  end
+
+  TTY_SET_TIME = Proc.new do |t, time|
+    t[:c_cc][LibC::VTIME] = time ? (time * 10).to_i.clamp(0, 255) : 0
+  end
+
+  TTY_RAW = Proc.new do |t, min: nil, time: nil, intr: nil|
     LibC.cfmakeraw(t.pointer)
     t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
-    if min && min >= 0
-      t[:c_cc][LibC::VMIN] = min
-    end
-    t[:c_cc][LibC::VTIME] = ((time || 0) * 10).to_i
+    TTY_SET_MIN[t, min]
+    TTY_SET_TIME[t, time]
     if intr
       t[:c_iflag] |= LibC::BRKINT
       t[:c_lflag] |= LibC::ISIG
@@ -116,7 +122,7 @@ module IO::Console
     end
   end
 
-  def raw(*, min: 1, time: nil, intr: nil, &block)
+  def raw(*, min: nil, time: nil, intr: nil, &block)
     ttymode_yield(block, min:, time:, intr:, &TTY_RAW)
   end
 
@@ -128,7 +134,7 @@ module IO::Console
   TTY_COOKED = Proc.new do |t|
     t[:c_iflag] |= (LibC::BRKINT|LibC::ISTRIP|LibC::ICRNL|LibC::IXON)
     t[:c_oflag] |= LibC::OPOST
-    t[:c_lflag] |= (LibC::ECHO|LibC::ECHOE|LibC::ECHOK|LibC::ECHONL|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
+    t[:c_lflag] |= (TTY_ECHO|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
   end
 
   def cooked(*, &block)
@@ -158,6 +164,8 @@ module IO::Console
     ttymode_yield(block) { |t| t[:c_lflag] &= ~(TTY_ECHO) }
   end
 
+  private_constant :TTY_SET_TIME, :TTY_SET_MIN, :TTY_RAW, :TTY_COOKED, :TTY_ECHO
+
   class Mode
     attr_reader :termios
 
@@ -168,6 +176,11 @@ module IO::Console
     def initialize_copy(m)
       @termios = m.termios.dup
     end
+
+    def echo?
+      !(@termios[:c_lflag] & TTY_ECHO).zero?
+    end
+    alias echo echo?
 
     def echo=(echo)
       if echo
@@ -186,6 +199,22 @@ module IO::Console
       new_mode = dup
       TTY_RAW[new_mode.termios, min:, time:, intr:]
       new_mode
+    end
+
+    def min
+      @termios[:c_cc][LibC::VMIN]
+    end
+
+    def min=(min)
+      TTY_SET_MIN[@termios, min]
+    end
+
+    def time
+      @termios[:c_cc][LibC::VTIME].quo(10)
+    end
+
+    def time=(time)
+      TTY_SET_TIME[@termios, time]
     end
   end
 

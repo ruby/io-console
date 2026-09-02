@@ -118,9 +118,28 @@ end
 
 IO.prepend(IO::Console::Windows::TTY)
 
-class IO::ConsoleMode
+class IO::Console::Mode
   def initialize(mode)
     @mode = mode
+  end
+
+  def echo?
+  end
+  alias echo echo?
+
+  def echo=(echo)
+  end
+
+  def min
+  end
+
+  def min=(min)
+  end
+
+  def time
+  end
+
+  def time=(time)
   end
 
   def virtual_terminal_processing?
@@ -151,7 +170,7 @@ end
 
 class IO
   def console_mode
-    IO::ConsoleMode.new(IO::Console::Windows.console_mode(self))
+    IO::Console::Mode.new(IO::Console::Windows.console_mode(self))
   end
 
   def console_mode=(mode)

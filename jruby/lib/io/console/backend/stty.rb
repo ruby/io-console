@@ -8,37 +8,97 @@ raise LoadError, "stty command not found" unless IO::Console::STTY
 warn "io/console on JRuby shells out to stty for most operations" if $VERBOSE
 
 class IO::Console::Mode
-  def initialize(saved)
-    @saved = saved
+  STTY_PATTERNS = /
+    (?<a>[a-z]\w*)\s(?:=\s(?:(?<n>\d+)|(?<c>\^.|.)|<undef>)|(?<n>\d+)(?:\s+\w+)?); |
+    (?<n>\d+)\s+(?<a>[a-z]\w*); |
+    (?<f>-)?(?<a>[a-z]\w*)(?=\s|$)
+  /x
+  private_constant :STTY_PATTERNS
+
+  def initialize(saved, attrs)
+    @saved = saved.chomp
+    @attrs = {}
+    attrs.scan(STTY_PATTERNS) do
+      m = $~
+      case attr = m[:a]
+      when "echo"
+        @attrs[attr.to_sym] = !m[:f]
+      when "min", "time"
+        @attrs[attr.to_sym] = m[:n]&.to_i
+      when *%w[brkint icanon isig opost]
+        @attrs[attr.to_sym] = !m[:f]
+      end
+    end
     @args = []
+    @changes = {}
   end
 
   def initialize_copy(mode)
     super
-    @saved = mode.__send__(:saved).dup
-    @args = mode.__send__(:args).dup
+    @attrs = @attrs.dup
+    @saved = @saved.dup
+    @args = @args.dup
+    @changes = @changes.dup
   end
+
+  def arguments
+    [
+      @saved,
+      *@args,
+      *@changes.flat_map {|a, v|
+        case v
+        when true
+          a.to_s
+        when false
+          "-#{a}"
+        when nil
+        else
+          [a.to_s, v.to_s]
+        end
+      },
+    ]
+  end
+
+  def echo?
+    @changes.fetch(:echo) {@attrs[:echo]}
+  end
+  alias echo echo?
 
   def echo=(echo)
-    @args << (echo ? 'echo' : '-echo')
-    echo
+    @changes[:echo] = echo
   end
 
-  def raw(min: 1, time: nil, intr: nil)
+  def raw(min: nil, time: nil, intr: nil)
     dup.raw!(min:, time:, intr:)
   end
 
-  def raw!(min: 1, time: nil, intr: nil)
+  def raw!(min: nil, time: nil, intr: nil)
     @args << 'raw'
-    @args.push('min', min.to_s) if min && min >= 0
-    @args.push('time', ((time || 0) * 10).to_i.to_s)
-    @args.concat(%w[brkint isig opost]) if intr
+    self.min = min
+    self.time = time
+    %i[brkint isig opost].each {|a| @changes[a] = true} if intr
     self
+  end
+
+  def min
+    @changes.fetch(:min) {@attrs[:min]}
+  end
+
+  def min=(min)
+    @changes[:min] = (min || 1).to_i.clamp(0, 255)
+  end
+
+  def time
+    @changes.fetch(:time) {@attrs[:time]}&.quo(10)
+  end
+
+  def time=(time)
+    @changes[:time] = ((time || 0) * 10).to_i.clamp(0, 255)
   end
 
   private
 
-  attr_reader :saved, :args
+  attr_reader :attrs, :saved, :args, :changes
 end
 
 # Non-Windows assumes stty command is available
@@ -106,20 +166,20 @@ class IO
   end
 
   def console_mode
-    Console::Mode.new(_io_console_stty('-g').chomp)
+    Console::Mode.new(_io_console_stty('-g'), _io_console_stty('-a'))
   end
 
   def console_mode=(mode)
-    _io_console_stty(mode.__send__(:saved), *mode.__send__(:args))
+    _io_console_stty(*mode.arguments)
     mode
   end
 
-  # Not all systems return same format of stty -a output
-  IEEE_STD_1003_2 = '(?<rows>\d+) rows; (?<columns>\d+) columns'
-  UBUNTU = 'rows (?<rows>\d+); columns (?<columns>\d+)'
-
   def winsize
-    match = _io_console_stty('-a').match(/#{IEEE_STD_1003_2}|#{UBUNTU}/o)
+    # Pattern for rows/columns; all systems may not return in these formats.
+    match = /
+      (?<rows>\d+)\s+rows;\s*(?<columns>\d+)\s+columns |
+      rows\s+(?<rows>\d+);\s*columns\s+(?<columns>\d+)
+    /x.match(_io_console_stty('-a'))
     [match[:rows].to_i, match[:columns].to_i]
   end
 
@@ -128,7 +188,7 @@ class IO
     sizelen = size.size
 
     if sizelen != 2 && sizelen != 4
-      raise ArgumentError.new("wrong number of arguments (given #{sizelen}, expected 2 or 4)")
+      raise ArgumentError, "wrong number of arguments (given #{sizelen}, expected 2 or 4)"
     end
 
     if sizelen == 4
