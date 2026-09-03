@@ -58,14 +58,11 @@ class IO
     wio = self == $stdin ? $stderr : self
     wio.write(prompt) if prompt
     begin
-      str = nil
-      noecho do
-        str = gets
-      end
+      str = noecho {gets("\n")}
     ensure
-      puts($/)
+      puts
     end
-    str&.chomp
+    str&.chomp("\n")
   end
 
   def input_pending?
@@ -164,8 +161,8 @@ class IO
 
     def getpass(prompt = nil)
       write(prompt) if prompt
-      str = gets&.chomp
-      puts($/)
+      str = gets("\n")&.chomp("\n")
+      puts
       str
     end
   end

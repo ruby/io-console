@@ -37,7 +37,7 @@ class IO
 end
 
 backends = []
-ENV["IO_CONSOLE_BACKEND"]&.tap do |be|
+ENV["IO_CONSOLE_BACKEND"]&.then do |be|
   backends.concat(be.split(",").map {|b| b.split(":")})
 end&.first ||
 # If Linux or BSD, try to load the native version
