@@ -37,6 +37,9 @@ class IO
 end
 
 backends = []
+ENV["IO_CONSOLE_BACKEND"]&.tap do |be|
+  backends.concat(be.split(",").map {|b| b.split(":")})
+end&.first ||
 # If Linux or BSD, try to load the native version
 case RbConfig::CONFIG['host_os']
 when /darwin|openbsd|freebsd|netbsd/i
