@@ -6,7 +6,7 @@ end
 
 class IO
   # TODO: Windows version uses "conin$" and "conout$" instead of /dev/tty
-  def self.console(sym = nil, *args)
+  def self.console(sym = nil, *args, **opts)
     raise TypeError, "expected Symbol, got #{sym.class}" unless sym.nil? || sym.kind_of?(Symbol)
 
     # klass = self == IO ? File : self
@@ -44,7 +44,7 @@ class IO
     end
 
     return nil unless con
-    return con.send(sym, *args) if sym
+    return con.send(sym, *args, **opts) if sym
     return con
   end
 
