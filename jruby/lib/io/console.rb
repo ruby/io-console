@@ -47,9 +47,7 @@ when /darwin|openbsd|freebsd|netbsd/i
 when /linux/i
   backends << %w[ffi/termios linux] << %w[stty]
 when /mswin|win32|ming/i
-  require_relative 'console/constants/windows'
-  require_relative 'console/backend/ffi/windows'
-  return
+  backends << %w[ffi/windows windows]
 else
   backends << %w[stty]
 end
