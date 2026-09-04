@@ -30,9 +30,10 @@ task :build => jruby_version_file
 task :test => jruby_version_file if RUBY_ENGINE == "jruby"
 
 Rake::TestTask.new(:test) do |t|
-  if extask
+  backend = ENV["IO_CONSOLE_BACKEND"]
+  if extask and !backend
     t.libs = [extask.lib_dir.chomp("/"+File.dirname(name))]
-  elsif RUBY_ENGINE == "jruby"
+  elsif RUBY_ENGINE == "jruby" or backend
     t.libs.unshift "jruby/lib"
   end
   t.libs << "lib"
