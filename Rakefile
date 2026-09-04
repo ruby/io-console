@@ -35,6 +35,7 @@ Rake::TestTask.new(:test) do |t|
   elsif RUBY_ENGINE == "jruby"
     t.libs.unshift "jruby/lib"
   end
+  t.libs << "lib"
   t.libs << "test/lib"
   t.ruby_opts << "-rhelper"
   t.test_files = FileList["test/**/test_*.rb"]
