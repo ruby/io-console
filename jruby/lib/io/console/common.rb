@@ -1,5 +1,5 @@
 # Methods common to all backend impls
-require 'io/wait'
+require 'io/wait' if RUBY_VERSION < '3.2'
 
 module IO::Console
 end
