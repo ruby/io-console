@@ -181,6 +181,7 @@ class IO
       end
       super()
     end
+    alias isatty tty?
   end
   private_constant :PlatformTty
 end
