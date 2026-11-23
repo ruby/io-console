@@ -65,7 +65,10 @@ when true
   have_func("rb_prepend_module") # not exported by TruffleRuby
 
   if find_executable("gperf") and vk_mk = (File.read("#$srcdir/win32_vk.mk") rescue nil)
-    $cleanfiles.concat(%w'win32_vk.inc win32_vk.chksum')
+    # Do not remove the pregenerated files when building in the source directory.
+    unless File.identical?($srcdir, ".")
+      $cleanfiles.concat(%w'win32_vk.inc win32_vk.chksum')
+    end
   end
 
   create_makefile("io/console") {|conf|
